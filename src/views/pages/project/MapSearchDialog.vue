@@ -7,52 +7,39 @@ const emit = defineEmits<{
 
 const dialog = defineModel<boolean>({ required: true })
 
-// 기본 중심 좌표 (서울)
+const searchText = ref('')
+const suggestions = ref<string[]>([])
 const defaultCenter = { lat: 37.5665, lng: 126.978 }
 const center = ref(defaultCenter)
 
 let map: google.maps.Map
-let marker: google.maps.marker.AdvancedMarkerElement
+let marker: google.maps.marker.AdvancedMarkerElement | null = null
 let infoWindow: google.maps.InfoWindow
+let autocompleteService: google.maps.places.AutocompleteService
+let placesService: google.maps.places.PlacesService
 
 const currentLat = ref<number | null>(null)
 const currentLng = ref<number | null>(null)
 const currentAddress = ref('')
-
+const showSuggestions = ref(false)
 const isConfirmDisabled = computed(() => !currentLat.value || !currentLng.value)
 
-// 다이얼로그 열릴 때 지도 초기화
+// -------------------
+// 지도 초기화
+// -------------------
 watch(dialog, async val => {
   if (!val)
     return
   await nextTick()
-
-  // ✅ 사용자 위치 가져오기 (권한 허용 시)
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        center.value = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-        initMap()
-      },
-      () => {
-        center.value = defaultCenter
-        initMap()
-      },
-    )
-  }
-  else {
-    center.value = defaultCenter
-    initMap()
-  }
+  await initMap()
 })
 
-// 지도 초기화
 async function initMap() {
   const mapEl = document.getElementById('map')
   if (!mapEl)
     return
 
-  const [{ Map }, { AdvancedMarkerElement }, { PlaceAutocompleteElement }] = await Promise.all([
+  const [{ Map }, { AdvancedMarkerElement }, { PlacesService, AutocompleteService }] = await Promise.all([
     google.maps.importLibrary('maps') as Promise<google.maps.MapsLibrary>,
     google.maps.importLibrary('marker') as Promise<google.maps.MarkerLibrary>,
     google.maps.importLibrary('places') as Promise<google.maps.PlacesLibrary>,
@@ -65,69 +52,133 @@ async function initMap() {
     mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
   })
 
-  marker = new AdvancedMarkerElement({ map })
   infoWindow = new google.maps.InfoWindow({})
+  placesService = new PlacesService(map)
+  autocompleteService = new AutocompleteService()
 
-  // ✅ 검색 오버레이 설정
-  const overlayEl = document.getElementById('map-search-overlay') as HTMLElement
-
-  overlayEl.innerHTML = ''
-
-  const placeAutocomplete = new PlaceAutocompleteElement()
-
-  placeAutocomplete.id = 'place-autocomplete-input'
-  placeAutocomplete.locationBias = center.value
-  overlayEl.appendChild(placeAutocomplete)
-
-  // 자동완성 선택 시 이동
-  placeAutocomplete.addEventListener('gmp-select', async (event: any) => {
-    const placePrediction = event.placePrediction
-    const place = placePrediction.toPlace()
-
-    await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location', 'viewport'] })
-
-    const loc = place.location
-    if (!loc)
-      return
-
-    if (place.viewport) {
-      map.fitBounds(place.viewport)
-    }
-    else {
-      map.setCenter(loc)
-      map.setZoom(17)
-    }
-
-    marker.position = loc
-    infoWindow.setContent(`
-      <div style="font-weight:600">${place.displayName}</div>
-      <div style="font-size:13px">${place.formattedAddress}</div>
-    `)
-    infoWindow.open({ map, anchor: marker, shouldFocus: false })
-
-    currentLat.value = loc.lat()
-    currentLng.value = loc.lng()
-    currentAddress.value = place.formattedAddress || ''
-  })
-
-  // 지도 클릭 시 마커 이동
+  // ✅ 지도 클릭 시 단일 마커 이동
   map.addListener('click', (e: google.maps.MapMouseEvent) => {
     if (!e.latLng)
       return
-    const loc = e.latLng
 
-    map.setCenter(loc)
-    marker.position = loc
-    infoWindow.setContent('Selected location')
-    infoWindow.setPosition(loc)
-    infoWindow.open({ map, anchor: marker, shouldFocus: false })
-    currentLat.value = loc.lat()
-    currentLng.value = loc.lng()
-    currentAddress.value = ''
+    const lat = e.latLng.lat()
+    const lng = e.latLng.lng()
+
+    if (!marker) {
+      marker = new AdvancedMarkerElement({ map, position: e.latLng })
+    }
+    else {
+      marker.map = map
+      marker.position = e.latLng
+    }
+
+    const geocoder = new google.maps.Geocoder()
+
+    geocoder.geocode({ location: e.latLng }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const address = results[0].formatted_address
+
+        infoWindow.setContent(`<div style="font-weight:600">${address}</div>`)
+        infoWindow.open({ map, anchor: marker!, shouldFocus: false })
+
+        currentLat.value = lat
+        currentLng.value = lng
+        currentAddress.value = address
+        searchText.value = address
+      }
+    })
   })
 }
 
-// Confirm 클릭 시 부모로 전달
+// -------------------
+// 자동완성 검색
+// -------------------
+function handleInput(val: string) {
+  searchText.value = val
+  if (!autocompleteService || !val) {
+    suggestions.value = []
+    showSuggestions.value = false
+
+    return
+  }
+
+  autocompleteService.getPlacePredictions(
+    { input: val, locationBias: center.value },
+    (predictions, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+        suggestions.value = predictions.map(p => p.description)
+        showSuggestions.value = true
+      }
+      else {
+        suggestions.value = []
+        showSuggestions.value = false
+      }
+    },
+  )
+}
+
+// -------------------
+// 검색어 선택 시 textSearch로 이동
+// -------------------
+function handleSelectSuggestion(description: string) {
+  searchText.value = description
+  showSuggestions.value = false
+
+  const request = { query: description }
+
+  placesService.textSearch(request, (results, status) => {
+    if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+      const place = results[0]
+      const loc = place.geometry?.location
+      if (!loc)
+        return
+
+      map.setCenter(loc)
+      map.setZoom(15)
+
+      if (!marker) {
+        marker = new google.maps.marker.AdvancedMarkerElement({ map, position: loc })
+      }
+      else {
+        marker.map = map
+        marker.position = loc
+      }
+
+      const addressHtml = `
+        <div style="font-weight:600">${place.name}</div>
+        <div style="font-size:13px">${place.formatted_address}</div>
+        ${place.url ? `<a href="${place.url}" target="_blank" style="font-size:12px;color:#1a73e8;">View on Google Maps</a>` : ''}
+      `
+
+      infoWindow.setContent(addressHtml)
+      infoWindow.open({ map, anchor: marker!, shouldFocus: false })
+
+      currentLat.value = loc.lat()
+      currentLng.value = loc.lng()
+      currentAddress.value = place.formatted_address || ''
+    }
+  })
+}
+
+// -------------------
+// Clear 버튼 클릭
+// -------------------
+function handleClear() {
+  searchText.value = ''
+  suggestions.value = []
+  showSuggestions.value = false
+  currentLat.value = null
+  currentLng.value = null
+  currentAddress.value = ''
+  if (marker)
+    marker.map = null
+  marker = null
+  infoWindow.close()
+}
+
+// -------------------
+// Confirm
+// -------------------
 function handleConfirm() {
   if (!currentLat.value || !currentLng.value)
     return
@@ -164,8 +215,6 @@ function handleConfirm() {
           />
           <span class="text-h6 font-weight-semibold text-high-emphasis">Search Location</span>
         </div>
-
-        <!-- Close Button -->
         <VBtn
           icon="ri-close-line"
           size="small"
@@ -175,12 +224,38 @@ function handleConfirm() {
         />
       </VCardTitle>
 
-      <!-- Map -->
       <VCardText
         class="pa-4"
         style="position: relative;"
       >
-        <div id="map-search-overlay" />
+        <div id="map-search-overlay">
+          <VTextField
+            v-model="searchText"
+            variant="outlined"
+            placeholder="Search place..."
+            density="comfortable"
+            hide-details
+            prepend-inner-icon="ri-search-line"
+            clearable
+            bg-color="white"
+            class="search-input"
+            @click:clear="handleClear"
+            @update:model-value="handleInput"
+          />
+          <VList
+            v-if="showSuggestions && suggestions.length"
+            class="autocomplete-list"
+          >
+            <VListItem
+              v-for="(item, i) in suggestions"
+              :key="i"
+              @click="handleSelectSuggestion(item)"
+            >
+              <VListItemTitle>{{ item }}</VListItemTitle>
+            </VListItem>
+          </VList>
+        </div>
+
         <div
           id="map"
           class="rounded-lg"
@@ -188,7 +263,6 @@ function handleConfirm() {
         />
       </VCardText>
 
-      <!-- Actions -->
       <VCardActions class="justify-end px-6 pb-4">
         <VBtn
           variant="outlined"
@@ -209,34 +283,44 @@ function handleConfirm() {
   </VDialog>
 </template>
 
-<style>
-/* ✅ 구글 자동완성 입력창 테두리/포커스 완전 커스텀 */
-gmpx-place-autocomplete::part(input) {
-  border: 1px solid rgba(0, 0, 0, 10%);
-  border-radius: 8px;
-  color: rgb(var(--v-theme-on-surface));
-  font-size: 14px;
-  padding-block: 8px;
-  padding-inline: 10px;
-  transition: border 0.2s, box-shadow 0.2s;
-}
-
-gmpx-place-autocomplete::part(input):focus {
-  border: 2px solid rgb(var(--v-theme-primary));
-  box-shadow: 0 0 6px rgba(var(--v-theme-primary), 0.5);
-  outline: none;
-}
-</style>
-
 <style scoped>
 #map-search-overlay {
   position: absolute;
-  z-index: 5;
-  padding: 4px;
+  z-index: 30;
+  inline-size: 340px;
+  inset-block-start: 32px;
+  inset-inline-start: 32px;
+}
+
+.search-input {
+  position: relative;
+  z-index: 40;
+  border-radius: 8px;
+  background-color: white !important;
+  block-size: 44px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 10%);
+  inline-size: 100%;
+}
+
+.autocomplete-list {
+  position: absolute;
+  z-index: 50;
+  border: 1px solid rgba(0, 0, 0, 12%);
   border-radius: 8px;
   background: white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 15%);
-  inset-block-start: 16px;
-  inset-inline-start: 16px; /* ✅ 왼쪽 정렬 */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 15%);
+  inline-size: 100%;
+  inset-block-start: 48px;
+  inset-inline-start: 0;
+  max-block-size: 220px;
+  overflow-y: auto;
+}
+
+.autocomplete-list .v-list-item {
+  cursor: pointer;
+}
+
+.autocomplete-list .v-list-item:hover {
+  background-color: rgba(var(--v-theme-primary), 0.08);
 }
 </style>
