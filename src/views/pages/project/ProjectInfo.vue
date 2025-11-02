@@ -162,6 +162,8 @@ const onSelectLocation = (coords: { lat: number; lng: number; address: string })
 
           <MapSearchDialog
             v-model="dialog"
+            :init-location="location"
+            :init-address="address"
             @select-location="onSelectLocation"
           />
         </VCol>

@@ -1,15 +1,25 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 
+interface Props {
+  modelValue: boolean
+  initLocation?: { lat: number; lng: number } | null
+  initAddress?: string
+}
+
+const props = defineProps<Props>()
+
 const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void
   (e: 'selectLocation', payload: { lat: number; lng: number; address: string }): void
 }>()
 
-const dialog = defineModel<boolean>({ required: true })
-
+// ----------------------
+// 기본 상태
+// ----------------------
 const searchText = ref('')
 const suggestions = ref<string[]>([])
-const defaultCenter = { lat: 37.5665, lng: 126.978 }
+const defaultCenter = { lat: 36.3725, lng: 127.362 } // 한국 KAIST 기술원 (대전 유성구)
 const center = ref(defaultCenter)
 
 let map: google.maps.Map
@@ -23,6 +33,11 @@ const currentLng = ref<number | null>(null)
 const currentAddress = ref('')
 const showSuggestions = ref(false)
 const isConfirmDisabled = computed(() => !currentLat.value || !currentLng.value)
+
+const dialog = computed({
+  get: () => props.modelValue,
+  set: val => emit('update:modelValue', val),
+})
 
 // -------------------
 // 지도 초기화
@@ -46,7 +61,7 @@ async function initMap() {
   ])
 
   map = new Map(mapEl, {
-    center: center.value,
+    center: props.initLocation || defaultCenter,
     zoom: 13,
     mapTypeControl: false,
     mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
@@ -55,6 +70,22 @@ async function initMap() {
   infoWindow = new google.maps.InfoWindow({})
   placesService = new PlacesService(map)
   autocompleteService = new AutocompleteService()
+
+  // ✅ 초기 좌표가 있으면 마커 표시
+  if (props.initLocation) {
+    const pos = props.initLocation
+
+    currentLat.value = pos.lat
+    currentLng.value = pos.lng
+    currentAddress.value = props.initAddress || ''
+    searchText.value = props.initAddress || ''
+
+    marker = new AdvancedMarkerElement({ map, position: pos })
+    infoWindow.setContent(`<div style="font-weight:600">${props.initAddress || ''}</div>`)
+    infoWindow.open({ map, anchor: marker!, shouldFocus: false })
+    map.setCenter(pos)
+    map.setZoom(15)
+  }
 
   // ✅ 지도 클릭 시 단일 마커 이동
   map.addListener('click', (e: google.maps.MapMouseEvent) => {
@@ -65,7 +96,9 @@ async function initMap() {
     const lng = e.latLng.lng()
 
     if (!marker) {
-      marker = new AdvancedMarkerElement({ map, position: e.latLng })
+      marker = new AdvancedMarkerElement({
+        map, position: e.latLng,
+      })
     }
     else {
       marker.map = map
@@ -80,7 +113,6 @@ async function initMap() {
 
         infoWindow.setContent(`<div style="font-weight:600">${address}</div>`)
         infoWindow.open({ map, anchor: marker!, shouldFocus: false })
-
         currentLat.value = lat
         currentLng.value = lng
         currentAddress.value = address
@@ -137,7 +169,9 @@ function handleSelectSuggestion(description: string) {
       map.setZoom(15)
 
       if (!marker) {
-        marker = new google.maps.marker.AdvancedMarkerElement({ map, position: loc })
+        marker = new google.maps.marker.AdvancedMarkerElement({
+          map, position: loc,
+        })
       }
       else {
         marker.map = map
@@ -152,7 +186,6 @@ function handleSelectSuggestion(description: string) {
 
       infoWindow.setContent(addressHtml)
       infoWindow.open({ map, anchor: marker!, shouldFocus: false })
-
       currentLat.value = loc.lat()
       currentLng.value = loc.lng()
       currentAddress.value = place.formatted_address || ''
@@ -170,9 +203,8 @@ function handleClear() {
   currentLat.value = null
   currentLng.value = null
   currentAddress.value = ''
-  if (marker)
-    marker.map = null
-  marker = null
+
+  // 마커 유지 (삭제 금지)
   infoWindow.close()
 }
 
@@ -224,6 +256,7 @@ function handleConfirm() {
         />
       </VCardTitle>
 
+      <!-- Map & Search -->
       <VCardText
         class="pa-4"
         style="position: relative;"
@@ -263,16 +296,22 @@ function handleConfirm() {
         />
       </VCardText>
 
+      <!-- Buttons -->
       <VCardActions class="justify-end px-6 pb-4">
         <VBtn
           variant="outlined"
           color="secondary"
+          class="me-2"
           @click="dialog = false"
         >
           Cancel
         </VBtn>
+
+        <!-- ✅ Create Project 스타일과 동일하게 -->
         <VBtn
           color="primary"
+          variant="elevated"
+          class="text-end py-0 shadow-md"
           :disabled="isConfirmDisabled"
           @click="handleConfirm"
         >
