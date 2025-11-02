@@ -71,23 +71,21 @@ async function initMap() {
   placesService = new PlacesService(map)
   autocompleteService = new AutocompleteService()
 
-  // ✅ 초기 좌표가 있으면 마커 표시
-  if (props.initLocation) {
-    const pos = props.initLocation
+  // 초기 마커 표시 (기본 KAIST 포함)
+  const pos = props.initLocation || defaultCenter
 
-    currentLat.value = pos.lat
-    currentLng.value = pos.lng
-    currentAddress.value = props.initAddress || ''
-    searchText.value = props.initAddress || ''
+  currentLat.value = pos.lat
+  currentLng.value = pos.lng
+  currentAddress.value = props.initAddress || 'KAIST, Daejeon, South Korea'
+  searchText.value = props.initAddress || 'KAIST, Daejeon, South Korea'
 
-    marker = new AdvancedMarkerElement({ map, position: pos })
-    infoWindow.setContent(`<div style="font-weight:600">${props.initAddress || ''}</div>`)
-    infoWindow.open({ map, anchor: marker!, shouldFocus: false })
-    map.setCenter(pos)
-    map.setZoom(15)
-  }
+  marker = new AdvancedMarkerElement({ map, position: pos })
+  infoWindow.setContent(`<div style="font-weight:600">${currentAddress.value}</div>`)
+  infoWindow.open({ map, anchor: marker!, shouldFocus: false })
+  map.setCenter(pos)
+  map.setZoom(15)
 
-  // ✅ 지도 클릭 시 단일 마커 이동
+  // 지도 클릭 시 단일 마커 이동
   map.addListener('click', (e: google.maps.MapMouseEvent) => {
     if (!e.latLng)
       return
@@ -204,7 +202,7 @@ function handleClear() {
   currentLng.value = null
   currentAddress.value = ''
 
-  // 마커 유지 (삭제 금지)
+  // 마커는 유지
   infoWindow.close()
 }
 
@@ -214,6 +212,7 @@ function handleClear() {
 function handleConfirm() {
   if (!currentLat.value || !currentLng.value)
     return
+
   emit('selectLocation', {
     lat: currentLat.value,
     lng: currentLng.value,
@@ -306,8 +305,6 @@ function handleConfirm() {
         >
           Cancel
         </VBtn>
-
-        <!-- ✅ Create Project 스타일과 동일하게 -->
         <VBtn
           color="primary"
           variant="elevated"
