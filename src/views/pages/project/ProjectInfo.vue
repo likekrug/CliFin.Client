@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import MapSearchDialog from './MapSearchDialog.vue' // 지도 검색 팝업 컴포넌트
+import MapSearchDialog from './MapSearchDialog.vue'
 
 // ----------------------
 // 🔹 프로젝트 기본 정보
@@ -16,23 +16,46 @@ const assetTypes = ref([
 ])
 
 // ----------------------
-// 🔹 Location (부모 컴포넌트의 상태)
+// 🔹 Location 상태
 // ----------------------
 const location = ref<{ lat: number; lng: number } | null>(null)
 const address = ref('')
 const dialog = ref(false)
 
-// ⭐️ [핵심] 자식 컴포넌트(팝업)에서 데이터가 전달될 때 실행되는 함수
+// ----------------------
+// 🔹 Asset Characteristics 상태
+// ----------------------
+const fuelExpense = ref({
+  capacity: null,
+  capacity_factor: null,
+  heat_rate: null,
+})
+
+const capex = ref({
+  power_generation: null,
+  general_facilities: null,
+  plant_equipment: null,
+  construction_labor: null,
+  project_management: null,
+  spare_parts: null,
+  other_costs: null,
+  sales_tax_rate: null,
+})
+
+// ----------------------
+// 🔹 자식에서 전달된 위치 선택 처리
+// ----------------------
 const onSelectLocation = (coords: { lat: number; lng: number; address: string }) => {
-  // 팝업에서 전달받은 좌표와 주소를 부모 상태에 저장
   location.value = { lat: coords.lat, lng: coords.lng }
   address.value = coords.address
-  dialog.value = false // 팝업 닫기
+  dialog.value = false
 }
 </script>
 
 <template>
-  <!-- 🔹 Project Information -->
+  <!-- ============================= -->
+  <!-- 1. Project Information -->
+  <!-- ============================= -->
   <VCard
     flat
     variant="outlined"
@@ -61,7 +84,7 @@ const onSelectLocation = (coords: { lat: number; lng: number; address: string })
           <div class="text-body-1 text-high-emphasis me-3">
             <VIcon
               size="10"
-              color="#B38CFF"
+              color="rgba(var(--v-theme-primary),1)"
               class="me-2"
               icon="ri-circle-fill"
             />
@@ -96,7 +119,7 @@ const onSelectLocation = (coords: { lat: number; lng: number; address: string })
           </VBtn>
         </VCol>
 
-        <!-- 🔹 Location -->
+        <!-- Location -->
         <VCol
           cols="12"
           class="mt-n2"
@@ -115,7 +138,6 @@ const onSelectLocation = (coords: { lat: number; lng: number; address: string })
             class="align-center"
             no-gutters
           >
-            <!-- Search Button -->
             <VCol
               cols="12"
               md="2"
@@ -131,7 +153,6 @@ const onSelectLocation = (coords: { lat: number; lng: number; address: string })
               </VBtn>
             </VCol>
 
-            <!-- Coordinates -->
             <VCol
               cols="12"
               md="3"
@@ -169,14 +190,12 @@ const onSelectLocation = (coords: { lat: number; lng: number; address: string })
         </VCol>
       </VRow>
 
-      <!-- Gift wrap banner -->
       <div class="bg-var-theme-background rounded pa-5 mt-4">
         <h6 class="text-h6">
           Default values are provided, but you can modify them according to your project.
         </h6>
         <p class="my-2 text-body-1">
           By creating a project, you are deemed to have agreed to
-
           <a
             href="javascript:void(0)"
             class="font-weight-medium d-inline-block"
@@ -185,10 +204,12 @@ const onSelectLocation = (coords: { lat: number; lng: number; address: string })
           </a>
         </p>
       </div>
-    </vcardtext>
+    </VCardText>
   </VCard>
 
-  <!-- 🔹 Project Details -->
+  <!-- ============================= -->
+  <!-- 2. Asset Characteristics -->
+  <!-- ============================= -->
   <VCard
     flat
     variant="outlined"
@@ -196,54 +217,196 @@ const onSelectLocation = (coords: { lat: number; lng: number; address: string })
     title="Asset Characteristics"
   >
     <VCardText>
-      <div class="text-sm text-high-emphasis">
-        <div class="d-flex justify-space-between mb-2">
-          <div class="text-body-1 text-high-emphasis">
-            Bag Total
+      <div class="section-border mb-6">
+        <!-- Fuel Expense -->
+        <div class="mb-3">
+          <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
+            <div class="vertical-bar me-2" />
+            <span class="text-body-1 text-high-emphasis">Capex</span>
           </div>
-          <div class="text-body-1">
-            ${{ }}.00
-          </div>
-        </div>
-
-        <div class="d-flex justify-space-between mb-2">
-          <div class="text-body-1 text-high-emphasis">
-            Coupon Discount
-          </div>
-          <a
-            href="javascript:void(0)"
-            class="text-base d-inline-block"
-          >
-            Apply Coupon
-          </a>
-        </div>
-
-        <div class="d-flex justify-space-between mb-2">
-          <div class="text-body-1 text-high-emphasis">
-            Order Total
-          </div>
-          <div class="text-body-1">
-            ${{ }}.00
-          </div>
-        </div>
-
-        <div class="d-flex justify-space-between">
-          <div class="text-body-1 text-high-emphasis">
-            Delivery Charges
-          </div>
-          <div class="d-flex gap-x-2">
-            <div class="text-decoration-line-through text-body-1 text-disabled">
-              $5.00
-            </div>
-            <VChip
-              size="small"
-              color="success"
+          <VRow dense>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
             >
-              Free
-            </VChip>
+              <VTextField
+                v-model="fuelExpense.capacity"
+                label="Capacity"
+                suffix="MW"
+                hint="300M–1000 MW"
+                persistent-hint
+                hide-details="auto"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
+            >
+              <VTextField
+                v-model="fuelExpense.capacity_factor"
+                label="Capacity Factor"
+                suffix="%"
+                hint="50–90 %"
+                persistent-hint
+                hide-details="auto"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
+            >
+              <VTextField
+                v-model="fuelExpense.heat_rate"
+                label="Heat Rate"
+                suffix="MMBtu/MWh"
+                hint="8.5–10.5 MMBtu/MWh"
+                persistent-hint
+                hide-details="auto"
+              />
+            </VCol>
+          </VRow>
+        </div>
+
+        <!-- Capex -->
+        <div>
+          <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
+            <VIcon
+              size="16"
+              color="#16B1FF"
+              class="me-2"
+              icon="ri-subtract-line"
+            />
+            Capex
           </div>
+          <VRow dense>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
+            >
+              <VTextField
+                v-model="capex.power_generation"
+                label="Power generation"
+                suffix="$"
+                hint="200M–350M $"
+                persistent-hint
+                hide-details="auto"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
+            >
+              <VTextField
+                v-model="capex.general_facilities"
+                label="General facilities"
+                suffix="$"
+                hint="120M–200M $"
+                persistent-hint
+                hide-details="auto"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
+            >
+              <VTextField
+                v-model="capex.plant_equipment"
+                label="Plant equipment"
+                suffix="$"
+                hint="350M–500M $"
+                persistent-hint
+                hide-details="auto"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
+            >
+              <VTextField
+                v-model="capex.construction_labor"
+                label="Construction labor"
+                suffix="$"
+                hint="300M–550M $"
+                persistent-hint
+                hide-details="auto"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
+            >
+              <VTextField
+                v-model="capex.project_management"
+                label="Project management"
+                suffix="$"
+                hint="10M–20M $"
+                persistent-hint
+                hide-details="auto"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
+            >
+              <VTextField
+                v-model="capex.spare_parts"
+                label="Spare parts"
+                suffix="%"
+                hint="0.2–0.5 %"
+                persistent-hint
+                hide-details="true"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
+            >
+              <VTextField
+                v-model="capex.other_costs"
+                label="Other costs"
+                suffix="$"
+                hint="450M–700M $"
+                persistent-hint
+                hide-details="auto"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="3"
+              lg="3"
+            >
+              <VTextField
+                v-model="capex.sales_tax_rate"
+                label="Sales tax rate"
+                suffix="%"
+                hint="0–10 %"
+                persistent-hint
+                hide-details="auto"
+              />
+            </VCol>
+          </VRow>
         </div>
       </div>
     </VCardText>
   </VCard>
 </template>
+
+<style scoped>
+.vertical-bar {
+  display: inline-block;
+  border-radius: 2px;
+  background-color: #16b1ff;
+  block-size: 16px;
+  inline-size: 3px;
+}
+</style>

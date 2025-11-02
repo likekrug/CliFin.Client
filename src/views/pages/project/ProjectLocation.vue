@@ -63,3 +63,10 @@ const onSelectLocation = (coords: { lat: number; lng: number; address: string })
     />
   </div>
 </template>
+
+<style scoped>
+.vertical-bar {
+  display: inline-block;
+  transform: rotate(90deg);
+}
+</style>
