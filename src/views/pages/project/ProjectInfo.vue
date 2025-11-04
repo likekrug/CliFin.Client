@@ -176,7 +176,7 @@ const isExpandedFinance = ref(true)
           <div class="d-flex align-center text-body-1 text-high-emphasis mb-2">
             <VIcon
               size="18"
-              color="primary"
+              color="rgba(var(--v-theme-on-surface), 0.6)"
               class="me-2"
               icon="ri-map-pin-line"
             />
@@ -266,60 +266,6 @@ const isExpandedFinance = ref(true)
           <VCardTitle class="me-2">
             Asset Characteristics
           </VCardTitle>
-
-          <VTooltip text="설비 용량, 효율, 열비율 등 기본 특성을 설정합니다.">
-            <template #activator="{ props }">
-              <VAvatar
-                v-bind="props"
-                color="info"
-                variant="tonal"
-                size="28"
-                class="me-2 cursor-pointer"
-              >
-                <VIcon
-                  icon="ri-chat-1-line"
-                  size="16"
-                />
-              </VAvatar>
-            </template>
-          </VTooltip>
-
-          <VTooltip text="프로젝트 CAPEX 및 설비 관련 데이터입니다.">
-            <template #activator="{ props }">
-              <VAvatar
-                v-bind="props"
-                rounded
-                color="warning"
-                variant="tonal"
-                size="28"
-                class="me-2 cursor-pointer"
-              >
-                <VIcon
-                  icon="ri-information-line"
-                  size="16"
-                />
-              </VAvatar>
-            </template>
-          </VTooltip>
-
-          <VTooltip text="프로젝트 CAPEX 및 설비 관련 데이터입니다.">
-            <template #activator="{ props }">
-              <VAvatar
-                rounded
-                v-bind="props"
-                color="black"
-                variant="tonal"
-                size="28"
-                class="cursor-pointer border me-2"
-              >
-                <VIcon
-                  icon="ri-question-line"
-                  size="16"
-                  color="black"
-                />
-              </VAvatar>
-            </template>
-          </VTooltip>
 
           <VTooltip text="도움말 또는 추가 설명 보기">
             <template #activator="{ props }">
@@ -448,23 +394,6 @@ const isExpandedFinance = ref(true)
             Market Conditions
           </VCardTitle>
 
-          <VTooltip text="전력 판매 단가, CAPACITY 수익, 보험료 등의 시장 조건을 입력합니다.">
-            <template #activator="{ props }">
-              <VAvatar
-                v-bind="props"
-                color="info"
-                variant="tonal"
-                size="28"
-                class="me-2 cursor-pointer"
-              >
-                <VIcon
-                  icon="ri-chat-1-line"
-                  size="16"
-                />
-              </VAvatar>
-            </template>
-          </VTooltip>
-
           <VTooltip text="시장 가격 및 비용 인상률 정보">
             <template #activator="{ props }">
               <VAvatar
@@ -482,6 +411,26 @@ const isExpandedFinance = ref(true)
               </VAvatar>
             </template>
           </VTooltip>
+
+          <!--
+            <VTooltip text="시장 조건에 대한 설명입니다.">
+            <template #activator="{ props }">
+            <VAvatar
+            v-bind="props"
+            size="28"
+            color="warning"
+            variant="tonal"
+            class="cursor-pointer d-inline-flex align-center justify-center"
+            >
+            <VIcon
+            icon="ri-information-line"
+            size="16"
+            color="warning-darken-2"
+            />
+            </VAvatar>
+            </template>
+            </VTooltip>
+          -->
         </div>
 
         <IconBtn
@@ -680,35 +629,21 @@ const isExpandedFinance = ref(true)
             Financing Terms & Tax
           </VCardTitle>
 
-          <VTooltip text="금융 조건 및 세율 관련 정보를 설정합니다.">
+          <VTooltip text="자산 특성에 대한 설명입니다.">
             <template #activator="{ props }">
               <VAvatar
                 v-bind="props"
-                color="info"
-                variant="tonal"
-                size="28"
-                class="me-2 cursor-pointer"
+                size="x-small"
+                variant="outlined"
+                color="gray"
+                rounded="lg"
+                class="bg-surface cursor-pointer d-inline-flex align-center justify-center"
               >
                 <VIcon
-                  icon="ri-chat-1-line"
+                  icon="ri-question-line"
                   size="16"
-                />
-              </VAvatar>
-            </template>
-          </VTooltip>
-
-          <VTooltip text="대출 비율, 금리, 유지보수 비용, 세율 등의 데이터">
-            <template #activator="{ props }">
-              <VAvatar
-                v-bind="props"
-                color="warning"
-                variant="tonal"
-                size="28"
-                class="cursor-pointer"
-              >
-                <VIcon
-                  icon="ri-line-chart-line"
-                  size="16"
+                  color="gray"
+                  class="mt-0_5"
                 />
               </VAvatar>
             </template>
@@ -895,10 +830,26 @@ const isExpandedFinance = ref(true)
 </template>
 
 <style scoped>
-.vertical-bar {
+/* .vertical-bar {
+  display: inline-block;
+  border-radius: 2px;
+  background-color: rgba(var(--v-theme-on-surface), 0.2);
+  block-size: 16px;
+  inline-size: 3px;
+} */
+
+/* .vertical-bar {
   display: inline-block;
   border-radius: 2px;
   background-color: #16b1ff;
+  block-size: 16px;
+  inline-size: 3px;
+} */
+
+.vertical-bar {
+  display: inline-block;
+  border-radius: 2px;
+  background-color: rgba(var(--v-theme-success));
   block-size: 16px;
   inline-size: 3px;
 }
