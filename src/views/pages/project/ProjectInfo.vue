@@ -79,6 +79,14 @@ const tax = ref({
 })
 
 // ----------------------
+// 🔹 DSRA 상태
+// ----------------------
+const dsra = ref({
+  enabled: true,
+  threshold: null,
+})
+
+// ----------------------
 // 🔹 자식에서 전달된 위치 선택 처리
 // ----------------------
 const onSelectLocation = (coords: { lat: number; lng: number; address: string }) => {
@@ -102,9 +110,7 @@ const isExpandedFinance = ref(true)
   <VCard
     flat
     variant="outlined"
-    class="
-    mt-0
-    first-card"
+    class="mt-0 first-card"
   >
     <VCardItem class="item-card">
       <VCardTitle>Project Information</VCardTitle>
@@ -114,7 +120,6 @@ const isExpandedFinance = ref(true)
 
     <VCardText class="card-text">
       <VRow class="align-center no-gutters">
-        <!-- Project Name -->
         <VCol
           cols="12"
           md="4"
@@ -126,19 +131,12 @@ const isExpandedFinance = ref(true)
           />
         </VCol>
 
-        <!-- Asset Type -->
         <VCol
           cols="12"
           md="5"
           class="py-0 d-flex align-center"
         >
           <div class="text-body-1 text-high-emphasis me-3">
-            <VIcon
-              size="10"
-              color="rgba(var(--v-theme-primary),1)"
-              class="me-2"
-              icon="ri-circle-fill"
-            />
             Asset Type :
           </div>
           <VRadioGroup
@@ -152,11 +150,11 @@ const isExpandedFinance = ref(true)
               :key="item.id"
               :label="item.name"
               :value="item.id"
+              class="me-4"
             />
           </VRadioGroup>
         </VCol>
 
-        <!-- Create Button -->
         <VCol
           cols="12"
           md="3"
@@ -185,13 +183,11 @@ const isExpandedFinance = ref(true)
             Location
           </div>
 
-          <VRow
-            class="align-center"
-            no-gutters
-          >
+          <VRow class="align-start">
             <VCol
               cols="12"
               md="2"
+              class="mb-3 mb-md-0"
             >
               <VBtn
                 color="primary"
@@ -207,7 +203,7 @@ const isExpandedFinance = ref(true)
             <VCol
               cols="12"
               md="3"
-              class="px-2"
+              class="mb-3 mb-md-0"
             >
               <VTextField
                 label="Coordinates"
@@ -265,8 +261,87 @@ const isExpandedFinance = ref(true)
     class="mt-3"
   >
     <VCardItem>
-      <VCardTitle>Asset Characteristics</VCardTitle>
-      <template #append>
+      <div class="d-flex align-center justify-space-between w-100">
+        <div class="d-flex align-center">
+          <VCardTitle class="me-2">
+            Asset Characteristics
+          </VCardTitle>
+
+          <VTooltip text="설비 용량, 효율, 열비율 등 기본 특성을 설정합니다.">
+            <template #activator="{ props }">
+              <VAvatar
+                v-bind="props"
+                color="info"
+                variant="tonal"
+                size="28"
+                class="me-2 cursor-pointer"
+              >
+                <VIcon
+                  icon="ri-chat-1-line"
+                  size="16"
+                />
+              </VAvatar>
+            </template>
+          </VTooltip>
+
+          <VTooltip text="프로젝트 CAPEX 및 설비 관련 데이터입니다.">
+            <template #activator="{ props }">
+              <VAvatar
+                v-bind="props"
+                rounded
+                color="warning"
+                variant="tonal"
+                size="28"
+                class="me-2 cursor-pointer"
+              >
+                <VIcon
+                  icon="ri-information-line"
+                  size="16"
+                />
+              </VAvatar>
+            </template>
+          </VTooltip>
+
+          <VTooltip text="프로젝트 CAPEX 및 설비 관련 데이터입니다.">
+            <template #activator="{ props }">
+              <VAvatar
+                rounded
+                v-bind="props"
+                color="black"
+                variant="tonal"
+                size="28"
+                class="cursor-pointer border me-2"
+              >
+                <VIcon
+                  icon="ri-question-line"
+                  size="16"
+                  color="black"
+                />
+              </VAvatar>
+            </template>
+          </VTooltip>
+
+          <VTooltip text="도움말 또는 추가 설명 보기">
+            <template #activator="{ props }">
+              <VAvatar
+                v-bind="props"
+                rounded
+                color="black"
+                variant="outlined"
+                size="28"
+                class="cursor-pointer border border-opacity-75"
+                style="border-color: rgba(0, 0, 0, 60%);"
+              >
+                <VIcon
+                  icon="ri-question-line"
+                  size="16"
+                  color="black"
+                />
+              </VAvatar>
+            </template>
+          </VTooltip>
+        </div>
+
         <IconBtn
           :color="isExpandedAsset ? 'primary' : 'default'"
           @click="isExpandedAsset = !isExpandedAsset"
@@ -276,20 +351,19 @@ const isExpandedFinance = ref(true)
             :icon="isExpandedAsset ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"
           />
         </IconBtn>
-      </template>
+      </div>
     </VCardItem>
 
     <VExpandTransition>
       <div v-show="isExpandedAsset">
         <VDivider />
         <VCardText>
-          <!-- Fuel Expense -->
           <div class="mb-3">
             <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
               <div class="vertical-bar me-2" />
               <span>Fuel Expense</span>
             </div>
-            <VRow dense>
+            <VRow>
               <VCol
                 cols="12"
                 md="3"
@@ -332,13 +406,12 @@ const isExpandedFinance = ref(true)
             </VRow>
           </div>
 
-          <!-- Capex -->
           <div>
             <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
               <div class="vertical-bar me-2" />
               <span>Capex</span>
             </div>
-            <VRow dense>
+            <VRow>
               <VCol
                 v-for="(val, key) in capex"
                 :key="key"
@@ -369,8 +442,48 @@ const isExpandedFinance = ref(true)
     class="mt-3"
   >
     <VCardItem>
-      <VCardTitle>Market Conditions</VCardTitle>
-      <template #append>
+      <div class="d-flex align-center justify-space-between w-100">
+        <div class="d-flex align-center">
+          <VCardTitle class="me-2">
+            Market Conditions
+          </VCardTitle>
+
+          <VTooltip text="전력 판매 단가, CAPACITY 수익, 보험료 등의 시장 조건을 입력합니다.">
+            <template #activator="{ props }">
+              <VAvatar
+                v-bind="props"
+                color="info"
+                variant="tonal"
+                size="28"
+                class="me-2 cursor-pointer"
+              >
+                <VIcon
+                  icon="ri-chat-1-line"
+                  size="16"
+                />
+              </VAvatar>
+            </template>
+          </VTooltip>
+
+          <VTooltip text="시장 가격 및 비용 인상률 정보">
+            <template #activator="{ props }">
+              <VAvatar
+                v-bind="props"
+                color="warning"
+                rounded
+                variant="tonal"
+                size="28"
+                class="cursor-pointer"
+              >
+                <VIcon
+                  icon="ri-chat-1-line"
+                  size="16"
+                />
+              </VAvatar>
+            </template>
+          </VTooltip>
+        </div>
+
         <IconBtn
           :color="isExpandedMarket ? 'primary' : 'default'"
           @click="isExpandedMarket = !isExpandedMarket"
@@ -380,20 +493,19 @@ const isExpandedFinance = ref(true)
             :icon="isExpandedMarket ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"
           />
         </IconBtn>
-      </template>
+      </div>
     </VCardItem>
 
     <VExpandTransition>
       <div v-show="isExpandedMarket">
         <VDivider />
         <VCardText>
-          <!-- Revenue -->
           <div class="mb-4">
             <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
               <div class="vertical-bar me-2" />
               <span>Revenue</span>
             </div>
-            <VRow dense>
+            <VRow>
               <VCol
                 cols="12"
                 md="3"
@@ -449,13 +561,12 @@ const isExpandedFinance = ref(true)
             </VRow>
           </div>
 
-          <!-- Expense -->
           <div>
             <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
               <div class="vertical-bar me-2" />
               <span>Expense</span>
             </div>
-            <VRow dense>
+            <VRow>
               <VCol
                 cols="12"
                 md="3"
@@ -563,8 +674,47 @@ const isExpandedFinance = ref(true)
     class="mt-3"
   >
     <VCardItem>
-      <VCardTitle>Financing Terms & Tax</VCardTitle>
-      <template #append>
+      <div class="d-flex align-center justify-space-between w-100">
+        <div class="d-flex align-center">
+          <VCardTitle class="me-2">
+            Financing Terms & Tax
+          </VCardTitle>
+
+          <VTooltip text="금융 조건 및 세율 관련 정보를 설정합니다.">
+            <template #activator="{ props }">
+              <VAvatar
+                v-bind="props"
+                color="info"
+                variant="tonal"
+                size="28"
+                class="me-2 cursor-pointer"
+              >
+                <VIcon
+                  icon="ri-chat-1-line"
+                  size="16"
+                />
+              </VAvatar>
+            </template>
+          </VTooltip>
+
+          <VTooltip text="대출 비율, 금리, 유지보수 비용, 세율 등의 데이터">
+            <template #activator="{ props }">
+              <VAvatar
+                v-bind="props"
+                color="warning"
+                variant="tonal"
+                size="28"
+                class="cursor-pointer"
+              >
+                <VIcon
+                  icon="ri-line-chart-line"
+                  size="16"
+                />
+              </VAvatar>
+            </template>
+          </VTooltip>
+        </div>
+
         <IconBtn
           :color="isExpandedFinance ? 'primary' : 'default'"
           @click="isExpandedFinance = !isExpandedFinance"
@@ -574,20 +724,19 @@ const isExpandedFinance = ref(true)
             :icon="isExpandedFinance ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"
           />
         </IconBtn>
-      </template>
+      </div>
     </VCardItem>
 
     <VExpandTransition>
       <div v-show="isExpandedFinance">
         <VDivider />
         <VCardText>
-          <!-- Financial Terms -->
           <div class="mb-4">
             <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
               <div class="vertical-bar me-2" />
               <span>Financial Terms</span>
             </div>
-            <VRow dense>
+            <VRow>
               <VCol
                 cols="12"
                 md="3"
@@ -669,13 +818,12 @@ const isExpandedFinance = ref(true)
             </VRow>
           </div>
 
-          <!-- Tax -->
           <div>
             <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
               <div class="vertical-bar me-2" />
               <span>Tax</span>
             </div>
-            <VRow dense>
+            <VRow>
               <VCol
                 cols="12"
                 md="3"
@@ -695,6 +843,55 @@ const isExpandedFinance = ref(true)
       </div>
     </VExpandTransition>
   </VCard>
+
+  <!-- ============================= -->
+  <!-- 5. DSRA -->
+  <!-- ============================= -->
+  <VCard
+    flat
+    variant="outlined"
+    class="mt-3"
+  >
+    <VCardItem>
+      <VCardTitle>DSRA</VCardTitle>
+    </VCardItem>
+
+    <VDivider />
+
+    <VCardText>
+      <VRow class="align-center">
+        <VCol
+          cols="12"
+          md="3"
+        >
+          <div class="d-flex align-center">
+            <span class="text-body-1 me-2">No</span>
+            <VSwitch
+              v-model="dsra.enabled"
+              color="primary"
+              inset
+              hide-details
+            />
+            <span class="text-body-1 ms-2">Yes</span>
+          </div>
+        </VCol>
+
+        <VCol
+          v-if="dsra.enabled"
+          cols="12"
+          md="3"
+        >
+          <VTextField
+            v-model="dsra.threshold"
+            label="Threshold"
+            hint="e.g. 1.5"
+            persistent-hint
+            hide-details="auto"
+          />
+        </VCol>
+      </VRow>
+    </VCardText>
+  </VCard>
 </template>
 
 <style scoped>
@@ -706,41 +903,35 @@ const isExpandedFinance = ref(true)
   inline-size: 3px;
 }
 
-/* 첫 번째 카드 전용 item-card 높이 조정 */
 .first-card .item-card {
   display: flex;
-  align-items: center;                /* 텍스트 수직 정렬 */
-  block-size: 52px !important;            /* 정확히 52px 고정 */
-  padding-block: 0 !important;        /* padding 제거 */
-  padding-inline: 20px !important;    /* 좌우 여백 유지 */
+  align-items: center;
+  block-size: 52px !important;
+  padding-block: 0 !important;
+  padding-inline: 20px !important;
 }
 
-/* 카드 제목 상하 여백 확장 */
 .v-card-item {
-  padding-block: 7px !important; /* 위아래 12px씩 → 총 높이 약 52px */
+  padding-block: 7px !important;
 }
 
-/* Divider 위쪽 간격 확보 */
 .v-card-item + .v-divider {
-  margin-block-start: 0 !important; /* 4~6px 사이에서 조정 가능 */
+  margin-block-start: 0 !important;
 }
 
-/* Divider 아래 공백 줄이기 */
 .v-card-text {
-  padding-block-start: 12px !important; /* 기본은 24px 수준 → 절반으로 */
+  padding-block-start: 12px !important;
 }
 
-/* Fuel Expense 섹션 상단 마진 줄이기 */
 .v-card-text > div:first-of-type {
-  margin-block-start: 4px !important; /* 기본 약 16px → 절반 이하로 */
+  margin-block-start: 4px !important;
 }
 
-/* Fuel Expense 제목 줄 간격 (세부 조정) */
 .v-card-text .text-high-emphasis.mb-4 {
-  margin-block-end: 0.75rem !important; /* 기존 1rem → 절반 정도 */
+  margin-block-end: 0.75rem !important;
 }
 
 .first-card .card-text {
-  padding-block: 0 16px !important; /* 기존 24px → 살짝 줄임 */
+  padding-block: 0 16px !important;
 }
 </style>
