@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import InformationDrawer from './InformationDrawer.vue'
 import MapSearchDialog from './MapSearchDialog.vue'
 
 // ----------------------
@@ -23,7 +24,7 @@ const address = ref('')
 const dialog = ref(false)
 
 // ----------------------
-// 🔹 Asset Characteristics 상태
+// 🔹 Asset Characteristics
 // ----------------------
 const fuelExpense = ref({
   capacity: null,
@@ -43,7 +44,7 @@ const capex = ref({
 })
 
 // ----------------------
-// 🔹 Market Conditions 상태
+// 🔹 Market Conditions
 // ----------------------
 const revenue = ref({
   sell_price: null,
@@ -63,7 +64,7 @@ const expense = ref({
 })
 
 // ----------------------
-// 🔹 Financing & Tax 상태
+// 🔹 Financing & Tax
 // ----------------------
 const finance = ref({
   tenor: null,
@@ -79,7 +80,7 @@ const tax = ref({
 })
 
 // ----------------------
-// 🔹 DSRA 상태
+// 🔹 DSRA
 // ----------------------
 const dsra = ref({
   enabled: true,
@@ -87,7 +88,7 @@ const dsra = ref({
 })
 
 // ----------------------
-// 🔹 자식에서 전달된 위치 선택 처리
+// 🔹 위치 선택
 // ----------------------
 const onSelectLocation = (coords: { lat: number; lng: number; address: string }) => {
   location.value = { lat: coords.lat, lng: coords.lng }
@@ -96,17 +97,26 @@ const onSelectLocation = (coords: { lat: number; lng: number; address: string })
 }
 
 // ----------------------
-// 🔹 카드별 아코디언 상태
+// 🔹 아코디언 상태
 // ----------------------
 const isExpandedAsset = ref(true)
 const isExpandedMarket = ref(true)
 const isExpandedFinance = ref(true)
+
+// ----------------------
+// 🔹 Drawer
+// ----------------------
+const isInfoDrawer = ref(false)
+const drawerCategory = ref<'asset' | 'market' | 'finance'>('asset')
+
+const openDrawer = (category: 'asset' | 'market' | 'finance') => {
+  drawerCategory.value = category
+  isInfoDrawer.value = true
+}
 </script>
 
 <template>
-  <!-- ============================= -->
-  <!-- 1. Project Information -->
-  <!-- ============================= -->
+  <!-- 1️⃣ Project Information -->
   <VCard
     flat
     variant="outlined"
@@ -115,9 +125,7 @@ const isExpandedFinance = ref(true)
     <VCardItem class="item-card">
       <VCardTitle>Project Information</VCardTitle>
     </VCardItem>
-
     <VDivider />
-
     <VCardText class="card-text">
       <VRow class="align-center no-gutters">
         <VCol
@@ -182,12 +190,10 @@ const isExpandedFinance = ref(true)
             />
             Location
           </div>
-
           <VRow class="align-start">
             <VCol
               cols="12"
               md="2"
-              class="mb-3 mb-md-0"
             >
               <VBtn
                 color="primary"
@@ -203,7 +209,6 @@ const isExpandedFinance = ref(true)
             <VCol
               cols="12"
               md="3"
-              class="mb-3 mb-md-0"
             >
               <VTextField
                 label="Coordinates"
@@ -252,9 +257,7 @@ const isExpandedFinance = ref(true)
     </VCardText>
   </VCard>
 
-  <!-- ============================= -->
-  <!-- 2. Asset Characteristics -->
-  <!-- ============================= -->
+  <!-- 2️⃣ Asset Characteristics -->
   <VCard
     flat
     variant="outlined"
@@ -266,28 +269,19 @@ const isExpandedFinance = ref(true)
           <VCardTitle class="me-2">
             Asset Characteristics
           </VCardTitle>
-
-          <VTooltip text="도움말 또는 추가 설명 보기">
-            <template #activator="{ props }">
-              <VAvatar
-                v-bind="props"
-                rounded
-                color="black"
-                variant="outlined"
-                size="28"
-                class="cursor-pointer border border-opacity-75"
-                style="border-color: rgba(0, 0, 0, 60%);"
-              >
-                <VIcon
-                  icon="ri-question-line"
-                  size="16"
-                  color="black"
-                />
-              </VAvatar>
-            </template>
-          </VTooltip>
+          <VAvatar
+            color="primary"
+            variant="tonal"
+            size="28"
+            class="cursor-pointer"
+            @click="openDrawer('asset')"
+          >
+            <VIcon
+              icon="ri-question-line"
+              size="16"
+            />
+          </VAvatar>
         </div>
-
         <IconBtn
           :color="isExpandedAsset ? 'primary' : 'default'"
           @click="isExpandedAsset = !isExpandedAsset"
@@ -304,10 +298,9 @@ const isExpandedFinance = ref(true)
       <div v-show="isExpandedAsset">
         <VDivider />
         <VCardText>
-          <div class="mb-3">
-            <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
-              <div class="vertical-bar me-2" />
-              <span>Fuel Expense</span>
+          <div class="mb-4">
+            <div class="d-flex align-center text-body-1 mb-3">
+              <div class="vertical-bar me-2" /> Fuel Expense
             </div>
             <VRow>
               <VCol
@@ -320,7 +313,6 @@ const isExpandedFinance = ref(true)
                   suffix="MW"
                   hint="300–1000 MW"
                   persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
               <VCol
@@ -333,7 +325,6 @@ const isExpandedFinance = ref(true)
                   suffix="%"
                   hint="50–90 %"
                   persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
               <VCol
@@ -346,16 +337,14 @@ const isExpandedFinance = ref(true)
                   suffix="MMBtu/MWh"
                   hint="8.5–10.5 MMBtu/MWh"
                   persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
             </VRow>
           </div>
 
           <div>
-            <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
-              <div class="vertical-bar me-2" />
-              <span>Capex</span>
+            <div class="d-flex align-center text-body-1 mb-3">
+              <div class="vertical-bar me-2" /> Capex
             </div>
             <VRow>
               <VCol
@@ -369,7 +358,6 @@ const isExpandedFinance = ref(true)
                   :label="key.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())"
                   suffix="$"
                   persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
             </VRow>
@@ -379,9 +367,7 @@ const isExpandedFinance = ref(true)
     </VExpandTransition>
   </VCard>
 
-  <!-- ============================= -->
-  <!-- 3. Market Conditions -->
-  <!-- ============================= -->
+  <!-- 3️⃣ Market Conditions -->
   <VCard
     flat
     variant="outlined"
@@ -393,46 +379,19 @@ const isExpandedFinance = ref(true)
           <VCardTitle class="me-2">
             Market Conditions
           </VCardTitle>
-
-          <VTooltip text="시장 가격 및 비용 인상률 정보">
-            <template #activator="{ props }">
-              <VAvatar
-                v-bind="props"
-                color="warning"
-                rounded
-                variant="tonal"
-                size="28"
-                class="cursor-pointer"
-              >
-                <VIcon
-                  icon="ri-chat-1-line"
-                  size="16"
-                />
-              </VAvatar>
-            </template>
-          </VTooltip>
-
-          <!--
-            <VTooltip text="시장 조건에 대한 설명입니다.">
-            <template #activator="{ props }">
-            <VAvatar
-            v-bind="props"
-            size="28"
+          <VAvatar
             color="warning"
             variant="tonal"
-            class="cursor-pointer d-inline-flex align-center justify-center"
-            >
+            size="28"
+            class="cursor-pointer"
+            @click="openDrawer('market')"
+          >
             <VIcon
-            icon="ri-information-line"
-            size="16"
-            color="warning-darken-2"
+              icon="ri-chat-1-line"
+              size="16"
             />
-            </VAvatar>
-            </template>
-            </VTooltip>
-          -->
+          </VAvatar>
         </div>
-
         <IconBtn
           :color="isExpandedMarket ? 'primary' : 'default'"
           @click="isExpandedMarket = !isExpandedMarket"
@@ -450,9 +409,8 @@ const isExpandedFinance = ref(true)
         <VDivider />
         <VCardText>
           <div class="mb-4">
-            <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
-              <div class="vertical-bar me-2" />
-              <span>Revenue</span>
+            <div class="d-flex align-center text-body-1 mb-3">
+              <div class="vertical-bar me-2" /> Revenue
             </div>
             <VRow>
               <VCol
@@ -465,7 +423,6 @@ const isExpandedFinance = ref(true)
                   suffix="$/MWh"
                   hint="30–70 $/MWh"
                   persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
               <VCol
@@ -478,7 +435,6 @@ const isExpandedFinance = ref(true)
                   suffix="%"
                   hint="1–3 %"
                   persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
               <VCol
@@ -491,7 +447,6 @@ const isExpandedFinance = ref(true)
                   suffix="$/MW-yr"
                   hint="30–100 $/MW-yr"
                   persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
               <VCol
@@ -504,107 +459,27 @@ const isExpandedFinance = ref(true)
                   suffix="%"
                   hint="1–3 %"
                   persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
             </VRow>
           </div>
 
           <div>
-            <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
-              <div class="vertical-bar me-2" />
-              <span>Expense</span>
+            <div class="d-flex align-center text-body-1 mb-3">
+              <div class="vertical-bar me-2" /> Expense
             </div>
             <VRow>
               <VCol
+                v-for="(val, key) in expense"
+                :key="key"
                 cols="12"
                 md="3"
               >
                 <VTextField
-                  v-model="expense.o_and_m_variable"
-                  label="O&M variable cost"
-                  suffix="$/MWh"
-                  hint="2–5 $/MWh"
-                  persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="expense.o_and_m_fixed"
-                  label="O&M fixed cost"
-                  suffix="$/MW-yr"
-                  hint="18,000–30,000 $/MW-yr"
-                  persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="expense.fuel_price"
-                  label="Fuel price"
-                  suffix="$/MMBtu"
-                  hint="1.5–5 $/MMBtu"
-                  persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="expense.insurance_rate"
-                  label="Insurance rate"
+                  v-model="expense[key]"
+                  :label="key.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())"
                   suffix="%"
-                  hint="1–15 %"
                   persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="expense.property_tax_rate"
-                  label="Property tax rate"
-                  suffix="%"
-                  hint="0.5–2 %"
-                  persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="expense.insurance_escalator"
-                  label="Insurance escalator"
-                  suffix="%"
-                  hint="2–4 %"
-                  persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="expense.common_escalator"
-                  label="Common escalator"
-                  suffix="%"
-                  hint="1.5–3.5 %"
-                  persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
             </VRow>
@@ -614,9 +489,7 @@ const isExpandedFinance = ref(true)
     </VExpandTransition>
   </VCard>
 
-  <!-- ============================= -->
-  <!-- 4. Financing Terms & Tax -->
-  <!-- ============================= -->
+  <!-- 4️⃣ Financing Terms & Tax -->
   <VCard
     flat
     variant="outlined"
@@ -628,28 +501,20 @@ const isExpandedFinance = ref(true)
           <VCardTitle class="me-2">
             Financing Terms & Tax
           </VCardTitle>
-
-          <VTooltip text="자산 특성에 대한 설명입니다.">
-            <template #activator="{ props }">
-              <VAvatar
-                v-bind="props"
-                size="x-small"
-                variant="outlined"
-                color="gray"
-                rounded="lg"
-                class="bg-surface cursor-pointer d-inline-flex align-center justify-center"
-              >
-                <VIcon
-                  icon="ri-question-line"
-                  size="16"
-                  color="gray"
-                  class="mt-0_5"
-                />
-              </VAvatar>
-            </template>
-          </VTooltip>
+          <VAvatar
+            size="28"
+            variant="outlined"
+            color="secondary"
+            rounded
+            class="cursor-pointer"
+            @click="openDrawer('finance')"
+          >
+            <VIcon
+              icon="ri-question-line"
+              size="16"
+            />
+          </VAvatar>
         </div>
-
         <IconBtn
           :color="isExpandedFinance ? 'primary' : 'default'"
           @click="isExpandedFinance = !isExpandedFinance"
@@ -667,96 +532,29 @@ const isExpandedFinance = ref(true)
         <VDivider />
         <VCardText>
           <div class="mb-4">
-            <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
-              <div class="vertical-bar me-2" />
-              <span>Financial Terms</span>
+            <div class="d-flex align-center text-body-1 mb-3">
+              <div class="vertical-bar me-2" /> Financial Terms
             </div>
             <VRow>
               <VCol
+                v-for="(val, key) in finance"
+                :key="key"
                 cols="12"
                 md="3"
               >
                 <VTextField
-                  v-model="finance.tenor"
-                  label="Tenor"
-                  suffix="year"
-                  hint="15–30 year"
-                  persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="finance.interest_rate"
-                  label="Interest rate"
+                  v-model="finance[key]"
+                  :label="key.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())"
                   suffix="%"
-                  hint="5–9 %"
                   persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="finance.debt_to_equity"
-                  label="Debt to equity ratio"
-                  suffix="%"
-                  hint="70–90 %"
-                  persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="finance.commitment_fee_rate"
-                  label="Commitment fee rate"
-                  suffix="%"
-                  hint="0.5–1.5 %"
-                  persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="finance.upfront_fee_rate"
-                  label="Upfront fee rate"
-                  suffix="%"
-                  hint="0.5–2 %"
-                  persistent-hint
-                  hide-details="auto"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="finance.maintenance_capex"
-                  label="Maintenance capex"
-                  suffix="%"
-                  hint="0–2.5 %"
-                  persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
             </VRow>
           </div>
 
           <div>
-            <div class="d-flex align-center text-body-1 text-high-emphasis mb-4">
-              <div class="vertical-bar me-2" />
-              <span>Tax</span>
+            <div class="d-flex align-center text-body-1 mb-3">
+              <div class="vertical-bar me-2" /> Tax
             </div>
             <VRow>
               <VCol
@@ -769,7 +567,6 @@ const isExpandedFinance = ref(true)
                   suffix="%"
                   hint="15–35 %"
                   persistent-hint
-                  hide-details="auto"
                 />
               </VCol>
             </VRow>
@@ -779,9 +576,7 @@ const isExpandedFinance = ref(true)
     </VExpandTransition>
   </VCard>
 
-  <!-- ============================= -->
-  <!-- 5. DSRA -->
-  <!-- ============================= -->
+  <!-- ✅ DSRA -->
   <VCard
     flat
     variant="outlined"
@@ -790,9 +585,7 @@ const isExpandedFinance = ref(true)
     <VCardItem>
       <VCardTitle>DSRA</VCardTitle>
     </VCardItem>
-
     <VDivider />
-
     <VCardText>
       <VRow class="align-center">
         <VCol
@@ -810,7 +603,6 @@ const isExpandedFinance = ref(true)
             <span class="text-body-1 ms-2">Yes</span>
           </div>
         </VCol>
-
         <VCol
           v-if="dsra.enabled"
           cols="12"
@@ -821,68 +613,26 @@ const isExpandedFinance = ref(true)
             label="Threshold"
             hint="e.g. 1.5"
             persistent-hint
-            hide-details="auto"
           />
         </VCol>
       </VRow>
     </VCardText>
   </VCard>
+
+  <!-- ✅ Information Drawer -->
+  <InformationDrawer
+    v-model="isInfoDrawer"
+    :category="drawerCategory"
+    :asset-type="selectedType || 'coal'"
+  />
 </template>
 
 <style scoped>
-/* .vertical-bar {
-  display: inline-block;
-  border-radius: 2px;
-  background-color: rgba(var(--v-theme-on-surface), 0.2);
-  block-size: 16px;
-  inline-size: 3px;
-} */
-
-/* .vertical-bar {
-  display: inline-block;
-  border-radius: 2px;
-  background-color: #16b1ff;
-  block-size: 16px;
-  inline-size: 3px;
-} */
-
 .vertical-bar {
   display: inline-block;
   border-radius: 2px;
   background-color: rgba(var(--v-theme-success));
   block-size: 16px;
   inline-size: 3px;
-}
-
-.first-card .item-card {
-  display: flex;
-  align-items: center;
-  block-size: 52px !important;
-  padding-block: 0 !important;
-  padding-inline: 20px !important;
-}
-
-.v-card-item {
-  padding-block: 7px !important;
-}
-
-.v-card-item + .v-divider {
-  margin-block-start: 0 !important;
-}
-
-.v-card-text {
-  padding-block-start: 12px !important;
-}
-
-.v-card-text > div:first-of-type {
-  margin-block-start: 4px !important;
-}
-
-.v-card-text .text-high-emphasis.mb-4 {
-  margin-block-end: 0.75rem !important;
-}
-
-.first-card .card-text {
-  padding-block: 0 16px !important;
 }
 </style>
