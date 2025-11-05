@@ -1,1 +1,59 @@
-// Write your overrides
+/* ============================================================
+   ✅ BODY 기본 설정
+============================================================ */
+body {
+  block-size: auto !important;
+  overflow-y: auto !important;
+}
+
+/* Drawer 열릴 때 body 스크롤 고정 */
+body.drawer-open {
+  position: fixed !important;
+  overflow: hidden !important;
+  inline-size: 100% !important;
+}
+
+/* ============================================================
+   ✅ Drawer (Information Drawer 전용)
+============================================================ */
+.v-navigation-drawer.info-drawer {
+  position: fixed !important;
+  z-index: 3001 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background-color: rgb(var(--v-theme-surface)) !important;
+  block-size: 100vh !important;
+  border-start-end-radius: 12px;
+  border-start-start-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 20%);
+  inset-block-start: 0 !important;
+  inset-inline-end: 0 !important;
+  transition:
+    transform 0.22s ease-in-out,
+    opacity 0.22s ease-in-out !important;
+
+  .v-navigation-drawer__content {
+    display: flex !important;
+    overflow: visible !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+  }
+
+  .scrollable-content {
+    flex: 1 1 auto !important;
+    max-block-size: calc(100vh - 64px) !important;
+    min-block-size: 0 !important;
+    overflow-y: auto !important;
+    padding-block-end: 16px !important;
+    scrollbar-gutter: stable;
+  }
+}
+
+/* Drawer Header 고정 */
+.v-navigation-drawer .drawer-header {
+  position: sticky;
+  z-index: 2;
+  flex-shrink: 0;
+  background-color: rgb(var(--v-theme-surface));
+  inset-block-start: 0;
+}

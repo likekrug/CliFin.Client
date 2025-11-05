@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, watch } from 'vue'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
+import { useDisplay } from 'vuetify'
 
 interface Props {
   modelValue: boolean
@@ -11,17 +12,51 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits(['update:modelValue'])
 
-// ✅ Drawer 닫기
-const closeNavigationDrawer = () => {
-  emit('update:modelValue', false)
-}
+const { mdAndUp } = useDisplay()
 
-// ✅ v-model 업데이트
-const handleDrawerModelValueUpdate = (val: boolean) => {
-  emit('update:modelValue', val)
-}
+// ✅ 반응형 Drawer 폭 설정
+const drawerWidth = computed(() => (mdAndUp.value ? 1400 : 440))
 
-// ✅ 섹션 타이틀
+// ✅ Drawer 닫기 이벤트
+const closeNavigationDrawer = () => emit('update:modelValue', false)
+const handleDrawerModelValueUpdate = (val: boolean) => emit('update:modelValue', val)
+
+// ✅ Drawer 열리고 닫힐 때 Scroll + Overlay 제어
+watch(
+  () => props.modelValue,
+  async val => {
+    await nextTick()
+
+    const body = document.body
+
+    if (val) {
+      // 🔹 Drawer 열릴 때: 스크롤 위치 저장 + 고정
+      const scrollY = window.scrollY
+
+      body.style.top = `-${scrollY}px`
+      body.dataset.scrollY = scrollY.toString()
+      body.classList.add('drawer-open')
+    }
+    else {
+      // 🔹 Drawer 닫힐 때
+      const scrollY = body.dataset.scrollY ? Number.parseInt(body.dataset.scrollY) : 0
+
+      // 1️⃣ Vuetify overlay 먼저 제거
+      const vuetifyOverlay = document.querySelector('.v-overlay.v-overlay--active')
+      if (vuetifyOverlay)
+        vuetifyOverlay.classList.remove('v-overlay--active')
+
+      // 2️⃣ 0.3초 뒤 body 스크롤 복원
+      setTimeout(() => {
+        body.classList.remove('drawer-open')
+        body.style.removeProperty('top')
+        window.scrollTo(0, scrollY)
+      }, 300)
+    }
+  },
+)
+
+// ✅ Drawer 섹션 제목
 const sectionTitle = computed(() => {
   switch (props.category) {
     case 'asset': return 'Asset Characteristics'
@@ -31,7 +66,7 @@ const sectionTitle = computed(() => {
   }
 })
 
-// ✅ 섹션별 데이터
+// ✅ Drawer 내용 데이터
 const infoData = computed(() => {
   switch (props.category) {
     case 'asset':
@@ -39,9 +74,9 @@ const infoData = computed(() => {
         {
           title: 'Fuel Expense',
           items: [
-            { name: 'Capacity', desc: 'The maximum amount of electricity a generator can produce at full load under ideal conditions (MW).' },
-            { name: 'Capacity Factor', desc: 'A ratio measuring how much electricity a power plant actually produces compared to its maximum potential (%).' },
-            { name: 'Heat Rate', desc: 'Indicates thermal efficiency — lower heat rate means higher efficiency (MMBtu/MWh).' },
+            { name: 'Capacity', desc: 'The maximum amount of electricity a generator can produce at full load under ideal conditions (MW).', range: '300–1000 MW' },
+            { name: 'Capacity Factor', desc: 'A ratio measuring how much electricity a power plant actually produces compared to its maximum potential (%).', range: '50–90 %' },
+            { name: 'Heat Rate', desc: 'Indicates thermal efficiency — lower heat rate means higher efficiency (MMBtu/MWh).', range: '8.5–10.5 MMBtu/MWh' },
           ],
         },
         {
@@ -62,9 +97,9 @@ const infoData = computed(() => {
         {
           title: 'Revenue',
           items: [
-            { name: 'Sell Price', desc: 'Electricity selling price per megawatt-hour ($/MWh).' },
-            { name: 'Sell Price Escalator', desc: 'Annual escalation rate for electricity prices (%).' },
-            { name: 'Capacity Revenue', desc: 'Revenue from capacity payments, typically expressed as $/MW-yr.' },
+            { name: 'Sell Price', desc: 'Electricity selling price per megawatt-hour ($/MWh).', range: '30–70 $/MWh' },
+            { name: 'Sell Price Escalator', desc: 'Annual escalation rate for electricity prices (%).', range: '1–3 %' },
+            { name: 'Capacity Revenue', desc: 'Revenue from capacity payments, typically expressed as $/MW-yr.', range: '30–100 $/MW-yr' },
           ],
         },
         {
@@ -83,14 +118,14 @@ const infoData = computed(() => {
           title: 'Financial Terms',
           items: [
             { name: 'Tenor', desc: 'Loan repayment period (years).' },
-            { name: 'Interest Rate', desc: 'Annual interest rate applied to project debt (%).' },
-            { name: 'Debt to Equity Ratio', desc: 'Proportion of debt vs. equity in the financing structure (%).' },
+            { name: 'Interest Rate', desc: 'Annual interest rate applied to project debt (%).', range: '3–8 %' },
+            { name: 'Debt to Equity Ratio', desc: 'Proportion of debt vs. equity in the financing structure (%).', range: '60–80 %' },
           ],
         },
         {
           title: 'Tax',
           items: [
-            { name: 'Federal Tax Rate', desc: 'Corporate income tax rate applied to project earnings (%).' },
+            { name: 'Federal Tax Rate', desc: 'Corporate income tax rate applied to project earnings (%).', range: '15–35 %' },
           ],
         },
       ]
@@ -101,24 +136,22 @@ const infoData = computed(() => {
 </script>
 
 <template>
-  <!-- ✅ 완전한 Materio Drawer 구조 -->
   <Teleport to="body">
     <VNavigationDrawer
-      data-allow-mismatch
       temporary
       location="end"
-      width="520"
+      :width="drawerWidth"
       elevation="24"
-      class="info-drawer scrollable-content"
-      :model-value="modelValue"
       attach="body"
-
-      scrim="rgba(0,0,0,0.35)"
+      teleport-disabled="false"
+      scrim="rgba(0,0,0,0.45)"
+      :model-value="modelValue"
+      class="info-drawer"
       @update:model-value="handleDrawerModelValueUpdate"
     >
       <!-- Header -->
       <div class="drawer-header d-flex align-center justify-space-between pa-4">
-        <h6 class="text-h6 font-weight-semibold mb-0">
+        <h6 class="font-weight-semibold mb-0 text-h5">
           {{ sectionTitle }}
         </h6>
         <VBtn
@@ -136,28 +169,29 @@ const infoData = computed(() => {
 
       <VDivider />
 
-      <!-- Scrollable Content -->
+      <!-- Content -->
       <PerfectScrollbar :options="{ wheelPropagation: false }">
         <VCard flat>
-          <VCardText>
+          <VCardText class="pt-4">
             <template
               v-for="(section, idx) in infoData"
               :key="idx"
             >
-              <div class="mb-4">
-                <h6 class="text-subtitle-1 font-weight-semibold mb-2">
+              <div class="mb-6">
+                <h6 class="text-body-1 font-weight-semibold text-high-emphasis mb-3">
                   {{ section.title }}
                 </h6>
+
                 <VTable
-                  density="compact"
-                  class="info-table"
+                  density="comfortable"
+                  class="text-body-1 materio-table"
                 >
                   <thead>
                     <tr>
-                      <th class="text-left text-uppercase text-caption">
+                      <th class="text-center text-caption text-uppercase font-weight-semibold text-medium-emphasis">
                         Item
                       </th>
-                      <th class="text-left text-uppercase text-caption">
+                      <th class="text-center text-caption text-uppercase font-weight-semibold text-medium-emphasis">
                         Description
                       </th>
                     </tr>
@@ -167,21 +201,22 @@ const infoData = computed(() => {
                       v-for="(item, i) in section.items"
                       :key="i"
                     >
-                      <td class="font-weight-medium">
+                      <td class="font-weight-medium text-high-emphasis text-left">
                         {{ item.name }}
                       </td>
-                      <td class="text-body-2">
+                      <td class="text-high-emphasis text-left">
                         {{ item.desc }}
+                        <div
+                          v-if="item.range"
+                          class="text-caption text-medium-emphasis mt-1"
+                        >
+                          Range: {{ item.range }}
+                        </div>
                       </td>
                     </tr>
                   </tbody>
                 </VTable>
               </div>
-
-              <VDivider
-                v-if="idx < infoData.length - 1"
-                class="my-4"
-              />
             </template>
           </VCardText>
         </VCard>
@@ -191,36 +226,35 @@ const infoData = computed(() => {
 </template>
 
 <style scoped>
-/* ✅ Drawer 본체 (AppBar 위까지 완전 덮음) */
 :deep(.v-navigation-drawer.info-drawer) {
   position: fixed !important;
   z-index: 2600 !important;
+  display: flex;
+  flex-direction: column;
   background-color: rgb(var(--v-theme-surface));
   block-size: 100vh !important;
   border-start-end-radius: 12px;
   border-start-start-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 20%);
-  inset-block-start: 0 !important;
-  inset-inline-end: 0 !important;
 }
 
-/* Header */
 .drawer-header {
   position: sticky;
-  z-index: 2;
+  z-index: 10;
   background-color: rgb(var(--v-theme-surface));
   inset-block-start: 0;
 }
 
-/* Table 스타일 */
-.info-table th {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  font-weight: 600;
+/* ✅ Materio 기본 테이블 셀 스타일 */
+:deep(.materio-table th),
+:deep(.materio-table td) {
+  border-block-end: 1px solid rgba(var(--v-border-color), 0.06);
+  padding-block: 14px !important;
+  padding-inline: 16px !important;
+  vertical-align: middle !important;
 }
 
-.info-table td {
-  color: rgba(var(--v-theme-on-surface), 0.87);
-  padding-block: 6px;
-  vertical-align: top;
+/* ✅ 마지막 행 라인 강조 */
+:deep(.materio-table tbody tr:last-child td) {
+  border-block-end: 1px solid rgba(var(--v-border-color), 0.12) !important;
 }
 </style>

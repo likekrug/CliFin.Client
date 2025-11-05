@@ -1,3 +1,4 @@
+// src/plugins/vuetify.ts
 import { deepMerge } from '@antfu/utils'
 import type { App } from 'vue'
 import { createVuetify } from 'vuetify'
@@ -13,6 +14,7 @@ import '@core/scss/template/libs/vuetify/index.scss'
 import 'vuetify/styles'
 
 export default function (app: App) {
+  // ✅ 쿠키 기반 테마 구성
   const cookieThemeValues = {
     defaultTheme: resolveVuetifyTheme(themeConfig.app.theme),
     themes: {
@@ -33,14 +35,29 @@ export default function (app: App) {
 
   const optionTheme = deepMerge({ themes }, cookieThemeValues)
 
+  // ✅ Vuetify 인스턴스 생성
   const vuetify = createVuetify({
     aliases: {
       IconBtn: VBtn,
     },
-    defaults,
+    defaults, // Materio 기본값 유지
     icons,
     theme: optionTheme,
 
+    // ✅ 핵심 설정: 모든 overlay를 body로 teleport
+    display: {
+      mobileBreakpoint: 'sm',
+      thresholds: { xs: 0, sm: 600, md: 960, lg: 1280, xl: 1920 },
+    },
+
+    // 👇 Vuetify 내부 설정 override
+    blueprint: {
+      defaults: {
+        global: {
+          attach: 'body',
+        },
+      },
+    },
   })
 
   app.use(vuetify)

@@ -1,5 +1,4 @@
 import { createApp } from 'vue'
-
 import App from '@/App.vue'
 import { registerPlugins } from '@core/utils/plugins'
 
@@ -7,6 +6,7 @@ import { registerPlugins } from '@core/utils/plugins'
 import '@core/scss/template/index.scss'
 import '@styles/styles.scss'
 
+// ✅ Google Maps API 로드
 const script = document.createElement('script')
 
 script.src = `https://maps.googleapis.com/maps/api/js?key=${
@@ -16,11 +16,11 @@ script.async = true
 script.defer = true
 document.head.appendChild(script)
 
-// Create vue app
+// ✅ 앱 생성
 const app = createApp(App)
 
-// Register plugins
+// ✅ Materio 플러그인 등록
 registerPlugins(app)
 
-// Mount vue app
+// ✅ 앱 마운트
 app.mount('#app')

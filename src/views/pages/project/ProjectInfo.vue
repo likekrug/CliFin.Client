@@ -270,7 +270,7 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
             Asset Characteristics
           </VCardTitle>
           <VAvatar
-            color="primary"
+            color="warning"
             variant="tonal"
             size="28"
             class="cursor-pointer"
@@ -358,6 +358,7 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
                   :label="key.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())"
                   suffix="$"
                   persistent-hint
+                  autocomplete="off"
                 />
               </VCol>
             </VRow>
