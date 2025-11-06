@@ -4,6 +4,8 @@ import ProjectList from '@/views/pages/cash-flow/ProjectList.vue'
 import CashFlowReport from '@/views/pages/cash-flow/CashFlowReport.vue'
 import CashFlowChart from '@/views/pages/cash-flow/CashFlowChart.vue'
 import CashFlowChart2 from '@/views/pages/cash-flow/CashFlowChart2.vue'
+import CashFlowChart3 from '@/views/pages/cash-flow/CashFlowChart3.vue'
+import CashFlowChartJM from '@/views/pages/cash-flow/CashFlowChartJM.vue'
 import CashFlowChartJS from '@/views/pages/cash-flow/CashFlowChartJS.vue'
 
 // ----------------------
@@ -57,6 +59,15 @@ const selectedProject = ref(projects.value[0])
 
           <VCol cols="12">
             <CashFlowChart2 />
+          </VCol>
+
+          <VCol cols="12">
+            <CashFlowChart3 />
+          </VCol>
+
+          <!-- 하단: 제미나이 -->
+          <VCol cols="12">
+            <CashFlowChartJM />
           </VCol>
 
           <!-- 하단: 그래프2 -->

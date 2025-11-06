@@ -19,7 +19,7 @@ import { getLineAreaChartConfig } from '@core/libs/chartjs/chartjsConfig'
 ChartJS.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip, Legend)
 
 // -------------------------------
-// 🔹 시리즈 정의
+// 🔹 시리즈 정의 (Z-index를 위해 Revenue를 Order 1로 설정)
 // -------------------------------
 const seriesList = ref([
   { key: 'revenue', name: 'Revenue', color: '#FFB84C', visible: true },
@@ -47,7 +47,7 @@ const allSeriesData: Record<string, number[]> = {
 }
 
 // -------------------------------
-// 🔹 체크박스 반영된 Dataset
+// 🔹 체크박스 반영된 Dataset (투명도 CC로 변경)
 // -------------------------------
 const datasets = computed(() =>
   seriesList.value
@@ -66,19 +66,27 @@ const datasets = computed(() =>
           fill: false,
           pointRadius: 0,
           pointHoverRadius: 0,
-          order: 99,
+          order: 99, // 가장 위 (선)
         }
       }
       else {
+        // Revenue는 가장 아래 Z-index (Order 1), 나머지는 Order 2
+        const datasetOrder = s.key === 'revenue' ? 1 : 2
+
         return {
           label: s.name,
           data: allSeriesData[s.key],
           borderColor: s.color,
-          backgroundColor: (ctx: any) => {
-            const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 300)
 
-            gradient.addColorStop(0, `${s.color}55`)
-            gradient.addColorStop(1, `${s.color}00`)
+          // 💡 투명도 CC (80%) 적용: 면적 구분이 명확해지도록 설정
+          backgroundColor: (ctx: any) => {
+            const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 300) // 캔버스 높이에 맞춰 그라데이션 정의
+
+            // 시작점 (상단): 80% 불투명도 ('CC')
+            gradient.addColorStop(0, `${s.color}CC`)
+
+            // 끝점 (하단): 완전 투명 ('00')
+            gradient.addColorStop(1, `${s.color}10`)
 
             return gradient
           },
@@ -89,7 +97,7 @@ const datasets = computed(() =>
           fill: 'origin',
           pointRadius: 0,
           pointHoverRadius: 0,
-          order: 1,
+          order: datasetOrder,
         }
       }
     }),
@@ -142,9 +150,14 @@ const chartConfig = computed(() => {
       y: {
         type: 'linear',
         position: 'left',
-        title: { display: true, text: 'USD' },
-        ticks: { callback: val => `$${val}` },
+        title: { display: true, text: 'Cash Flow (USD)' },
+        max: 3500,
+        min: 0,
+        ticks: {
+          callback: (val: number | string) => `$${(Number(val) / 1000).toFixed(0)}K`,
+        },
         grid: { drawOnChartArea: true },
+        stacked: false,
         afterFit: scale => {
           scale.top += 40
         },
@@ -182,14 +195,12 @@ const chartData = computed(() => ({
     outlined
     class="pa-0"
   >
-    <!-- ✅ 제목 Baseline Projection Overview와 동일한 크기 -->
     <VCardTitle class="px-6 py-4 text-subtitle-1 font-weight-semibold">
       Cash Flow & DSCR Overview
     </VCardTitle>
 
     <VCardText class="px-6 pt-2 pb-4">
       <VRow>
-        <!-- 🔹 체크박스 영역 -->
         <VCol
           cols="12"
           md="3"
@@ -207,7 +218,6 @@ const chartData = computed(() => ({
           />
         </VCol>
 
-        <!-- 🔹 차트 영역 -->
         <VCol
           cols="12"
           md="9"
@@ -235,4 +245,3 @@ const chartData = computed(() => ({
   margin-block-start: 6px;
 }
 </style>
-`
