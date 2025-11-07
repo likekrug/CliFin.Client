@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 interface Project {
   id: number
   name: string
@@ -7,120 +9,268 @@ interface Project {
 }
 
 defineProps<{ project: Project }>()
+
+const showReport = ref(false)
+
+const toggleCard = () => {
+  showReport.value = !showReport.value
+}
 </script>
 
 <template>
   <VCard
     outlined
-    class="pa-0"
+    class="pa-0 projection-card"
   >
-    <!-- 🔹 Title -->
+    <!-- ✅ 카드 헤더 -->
     <VCardTitle class="d-flex align-center justify-space-between px-6 py-4">
-      Baseline Projection Overview
+      <span class="text-h6 font-weight-semibold">
+        Baseline Projection Report
+      </span>
+
       <VBtn
         icon
-        variant="outlined"
-        size="28"
-        color="secondary"
+        variant="tonal"
+        size="32"
+        color="warning"
         class="rounded"
+        @click="toggleCard"
       >
-        <VIcon icon="ri-arrow-right-line" />
+        <VIcon
+          :icon="showReport ? 'ri-arrow-left-line' : 'ri-question-line'"
+          size="20"
+        />
       </VBtn>
     </VCardTitle>
 
-    <VDivider />
+    <VDivider class="custom-divider" />
 
-    <!-- 🔹 Capital Structure -->
-    <VCardText class="px-6 py-4">
-      <h6 class="text-subtitle-1 font-weight-semibold mb-3">
-        Capital Structure
-      </h6>
+    <!-- ✅ Overview 카드 -->
+    <template v-if="!showReport">
+      <VCardText class="px-6 py-4 section">
+        <h6 class="section-title">
+          Capital Structure
+        </h6>
 
-      <div class="text-body-1">
-        <div class="d-flex justify-space-between align-center my-2">
-          <span class="text-high-emphasis font-weight-medium">Debt amount</span>
-          <span class="text-high-emphasis">$12,000,000 $</span>
+        <div class="info-row">
+          <span class="label">Debt amount</span>
+          <span class="value right">$12,000,000</span>
         </div>
 
-        <div class="d-flex justify-space-between align-center my-2">
-          <span class="text-high-emphasis font-weight-medium">Tenor / Margin</span>
-          <span class="text-high-emphasis">10 Year / 3.5%</span>
+        <div class="info-row">
+          <span class="label">Tenor / Margin</span>
+          <span class="value right">10 Year / 3.5%</span>
         </div>
 
-        <div class="d-flex justify-space-between align-center my-2">
-          <span class="text-high-emphasis font-weight-medium">EOD threshold / DSRA</span>
-          <span class="text-high-emphasis">1.2x / 6 months (Y)</span>
+        <div class="info-row">
+          <span class="label">EOD threshold / DSRA</span>
+          <span class="value right">1.2x / 6 months (Y)</span>
         </div>
-      </div>
-    </VCardText>
+      </VCardText>
 
-    <VDivider />
+      <VDivider class="custom-divider" />
 
-    <!-- 🔹 Valuation Summary -->
-    <VCardText class="px-6 py-4">
-      <h6 class="text-subtitle-1 font-weight-semibold mb-3">
-        Valuation Summary
-      </h6>
+      <VCardText class="px-6 py-4 section">
+        <h6 class="section-title">
+          Valuation Summary
+        </h6>
 
-      <div class="text-body-1">
-        <div class="d-flex justify-space-between align-center my-2">
-          <span class="text-high-emphasis font-weight-medium">Equity IRR</span>
-          <span class="text-high-emphasis">14.2 %</span>
+        <div class="info-row">
+          <span class="label">Equity IRR</span>
+          <span class="value right">14.2 %</span>
         </div>
 
-        <div class="d-flex justify-space-between align-center my-2">
-          <span class="text-high-emphasis font-weight-medium">Equity NPV</span>
-          <span class="text-high-emphasis">$5,430,000 $</span>
+        <div class="info-row">
+          <span class="label">Equity NPV</span>
+          <span class="value right">$5,430,000</span>
         </div>
 
-        <div class="d-flex justify-space-between align-center my-2">
-          <span class="text-high-emphasis font-weight-medium">Payback period equity</span>
-          <span class="text-high-emphasis">8.5 Year</span>
+        <div class="info-row">
+          <span class="label">Payback period equity</span>
+          <span class="value right">8.5 Year</span>
         </div>
-      </div>
-    </VCardText>
+      </VCardText>
 
-    <VDivider />
+      <VDivider class="custom-divider" />
 
-    <!-- 🔹 Investment Summary -->
-    <VCardText class="px-6 py-4">
-      <h6 class="text-subtitle-1 font-weight-semibold mb-3">
-        Investment Summary
-      </h6>
+      <VCardText class="px-6 py-4 section">
+        <h6 class="section-title">
+          Investment Summary
+        </h6>
 
-      <div class="text-body-1">
-        <div class="d-flex justify-space-between align-center my-2">
-          <span class="text-high-emphasis font-weight-medium">Min DSCR</span>
-          <span class="text-high-emphasis">1.35</span>
+        <div class="info-row">
+          <span class="label">Min DSCR</span>
+          <span class="value right">1.35</span>
         </div>
 
-        <div class="d-flex justify-space-between align-center my-2">
-          <span class="text-high-emphasis font-weight-medium">LLCR</span>
-          <span class="text-high-emphasis">1.65</span>
+        <div class="info-row">
+          <span class="label">LLCR</span>
+          <span class="value right">1.65</span>
         </div>
 
-        <div class="d-flex justify-space-between align-center my-2">
-          <span class="text-high-emphasis font-weight-medium">Default year</span>
-          <span class="text-high-emphasis">2031 Year</span>
+        <div class="info-row">
+          <span class="label">Default year</span>
+          <span class="value right">2031</span>
         </div>
 
-        <div class="d-flex justify-space-between align-center my-2">
-          <span class="text-high-emphasis font-weight-medium">DSRA trigger</span>
-          <span class="text-high-emphasis">Y</span>
+        <div class="info-row">
+          <span class="label">DSRA trigger</span>
+          <span class="value right">Y</span>
         </div>
-      </div>
-    </VCardText>
+      </VCardText>
+    </template>
+
+    <!-- ✅ Report 카드 -->
+    <template v-else>
+      <VCardText class="px-6 py-4 section">
+        <h6 class="section-title">
+          Capital Structure
+        </h6>
+
+        <div class="info-row">
+          <span class="label">Debt amount</span>
+          <span class="value left">Debt service</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Tenor / Margin</span>
+          <span class="value left">Loan duration / interest margin</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">EOD threshold / DSRA</span>
+          <span class="value left">
+            Event of Default threshold / Debt Service Reserve Account condition
+          </span>
+        </div>
+      </VCardText>
+
+      <VDivider class="custom-divider" />
+
+      <VCardText class="px-6 py-4 section">
+        <h6 class="section-title">
+          Valuation Summary
+        </h6>
+
+        <div class="info-row">
+          <span class="label">Equity IRR</span>
+          <span class="value left">Internal rate of return to equity investors</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Equity NPV</span>
+          <span class="value left">Net present value of equity cash flows</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Payback period equity</span>
+          <span class="value left">
+            The amount of time it takes to recover the cost of an investment or reach breakeven
+          </span>
+        </div>
+      </VCardText>
+
+      <VDivider class="custom-divider" />
+
+      <VCardText class="px-6 py-4 section">
+        <h6 class="section-title">
+          Investment Summary
+        </h6>
+
+        <div class="info-row">
+          <span class="label">Min DSCR</span>
+          <span class="value left">
+            The minimum DSCR observed across the project period, indicating the weakest coverage capacity
+          </span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">LLCR</span>
+          <span class="value left">Loan Life Coverage Ratio</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Default year</span>
+          <span class="value left">
+            Year in which default occurs based on DSCR threshold
+          </span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">DSRA trigger</span>
+          <span class="value left">
+            Condition activating the use or replenishment of the DSRA account
+          </span>
+        </div>
+      </VCardText>
+    </template>
   </VCard>
 </template>
 
 <style scoped>
-.v-card {
+.projection-card {
   border-radius: 10px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 5%);
+  background-color: rgb(var(--v-theme-surface)) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 10%);
+  color: rgb(var(--v-theme-on-surface)) !important;
 }
 
-/* 텍스트 정렬 및 시각적 간격 조정 */
-.text-body-1 {
-  line-height: 1.8;
+/* ✅ 중간 제목: 검은색~회색 사이 */
+.section-title {
+  color: rgba(var(--v-theme-on-surface), 0.75);
+  font-size: 15px;
+  font-weight: 600;
+  margin-block-end: 10px;
+}
+
+/* ✅ Divider: background-color 기반으로 명시 지정 */
+.custom-divider {
+  border: none !important;
+  background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+  block-size: 1px !important;
+  opacity: 1 !important;
+}
+
+/* ✅ 라이트모드: 살짝 더 진하게 */
+:root[data-theme="light"] .custom-divider {
+  background-color: rgba(var(--v-theme-on-surface), 0.18) !important;
+}
+
+/* ✅ 다크모드: 은은하게 */
+:root[data-theme="dark"] .custom-divider {
+  background-color: rgba(var(--v-theme-on-surface), 0.1) !important;
+}
+
+/* 🔹 공통 구조 */
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-block-end: 10px;
+}
+
+.label {
+  flex: 0 0 180px;
+  color: rgba(var(--v-theme-on-surface), 0.9);
+  font-weight: 600;
+}
+
+.value.right {
+  flex: 1;
+  color: rgba(var(--v-theme-on-surface), 0.9);
+  text-align: end;
+}
+
+.value.left {
+  flex: 1;
+  color: rgba(var(--v-theme-on-surface), 0.85);
+  line-height: 1.5;
+  text-align: start;
+}
+
+/* 섹션 간 여백 */
+.section + .section {
+  margin-block-start: 8px;
 }
 </style>
