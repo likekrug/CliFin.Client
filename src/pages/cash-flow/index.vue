@@ -8,6 +8,7 @@ import CashFlowChart3 from '@/views/pages/cash-flow/CashFlowChart3.vue'
 import CashFlowChartJM from '@/views/pages/cash-flow/CashFlowChartJM.vue'
 import CashFlowChartJS from '@/views/pages/cash-flow/CashFlowChartJS.vue'
 import TestChart from '@/views/pages/cash-flow/TestChart.vue'
+import CashFlowPlotly from '@/views/pages/cash-flow/CashFlowPlotly.vue'
 
 // ----------------------
 // 🔹 프로젝트 리스트 데이터
@@ -52,9 +53,11 @@ const selectedProject = ref(projects.value[0])
 
           <!-- 하단: 그래프 -->
 
-          <VCol cols="12">
+          <!--
+            <VCol cols="12">
             <CashFlowChart :project="selectedProject" />
-          </VCol>
+            </VCol>
+          -->
 
           <!-- 하단: 그래프2 라인 그래프 -->
 
@@ -71,23 +74,27 @@ const selectedProject = ref(projects.value[0])
             </VCol>
           -->
 
-          <!-- 하단: 제미나이 -->
-
           <VCol cols="12">
-            <TestChart />
-          </VCol>
+            <CashFlowPlotly />
 
-          <!-- 하단: 제미나이 -->
-          <VCol cols="12">
-            <CashFlowChartJM />
-          </VCol>
-
-          <!-- 하단: 그래프2 chart js -->
-          <!--
             <VCol cols="12">
-            <CashFlowChartJS />
+              <TestChart />
             </VCol>
-          -->
+
+            <!-- 하단: 제미나이 -->
+            <!--
+              <VCol cols="12">
+              <CashFlowChartJM />
+              </VCol>
+            -->
+
+            <!-- 하단: 그래프2 chart js -->
+            <!--
+              <VCol cols="12">
+              <CashFlowChartJS />
+              </VCol>
+            -->
+          </vcol>
         </VRow>
       </VCol>
     </VRow>

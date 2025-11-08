@@ -4,7 +4,7 @@ import VueApexCharts from 'vue3-apexcharts'
 import type { ApexOptions } from 'apexcharts'
 
 // -------------------------------
-// ✅ 데이터 정의
+// ✅ 원본 데이터
 // -------------------------------
 const allSeriesData = {
   revenue: [454950600.0, 464049612.0, 473330604.24, 482797216.32, 492453160.65, 502302223.86, 512348268.34, 522595233.71, 533047138.38, 543708081.15, 554582242.77, 565673887.63, 576987365.38, 588527112.69, 600297654.94, 612303608.04, 624549680.2, 637040673.81, 649781487.28, 662777117.03, 676032659.37, 689553312.56, 703344378.81, 717411266.38, 731759491.71, 746394681.55, 761322575.18, 776549026.68, 792080007.21, 807921607.36],
@@ -17,18 +17,33 @@ const allSeriesData = {
 }
 
 // -------------------------------
-// ✅ 시리즈 정의
+// ✅ 누적 스택 계산
+// -------------------------------
+const stackedSeries = Array.from({ length: 30 }, (_, i) => {
+  const op = allSeriesData.operation_expense[i]
+  const fuel = op + allSeriesData.fuel_expense[i]
+  const tax = fuel + allSeriesData.property_tax_exp[i]
+  const ins = tax + allSeriesData.insurance_expense[i]
+  const debt = ins + allSeriesData.debt_service[i]
+  const equity = debt + allSeriesData.cash_flow_to_equity[i]
+
+  return { op, fuel, tax, ins, debt, equity }
+})
+
+// -------------------------------
+// ✅ Series 정의 (Revenue 라인 포함)
 // -------------------------------
 const series = ref([
-  { name: 'Operation Expense', data: allSeriesData.operation_expense },
-  { name: 'Fuel Expense', data: allSeriesData.fuel_expense },
-  { name: 'Property Tax', data: allSeriesData.property_tax_exp },
-  { name: 'Insurance', data: allSeriesData.insurance_expense },
-  { name: 'Debt Service', data: allSeriesData.debt_service },
-  { name: 'Cash Flow to Equity', data: allSeriesData.cash_flow_to_equity },
+  { name: 'Operation Expense', data: stackedSeries.map(v => v.op) },
+  { name: 'Fuel Expense', data: stackedSeries.map(v => v.fuel) },
+  { name: 'Property Tax', data: stackedSeries.map(v => v.tax) },
+  { name: 'Insurance', data: stackedSeries.map(v => v.ins) },
+  { name: 'Debt Service', data: stackedSeries.map(v => v.debt) },
+  { name: 'Cash Flow to Equity', data: stackedSeries.map(v => v.equity) },
+  { name: 'Revenue', type: 'line', data: stackedSeries.map(v => v.equity) }, // ✅ Revenue 라인 = top
 ])
 
-const colors = ['#6A5ACD', '#FF7F50', '#FFD86F', '#5AB0F8', '#C084FC', '#D8D3FF']
+const colors = ['#6A5ACD', '#FF7F50', '#FFD86F', '#5AB0F8', '#C084FC', '#D8D3FF', '#000000']
 
 // -------------------------------
 // ✅ Checkbox 상태
@@ -40,14 +55,12 @@ const visibleStates = ref<Record<string, boolean>>(
 const chartRef = ref()
 
 // -------------------------------
-// ✅ 반응형 감지 (모바일 / PC)
+// ✅ 반응형 감지
 // -------------------------------
 const isMobile = ref(window.innerWidth < 960)
-
 function handleResize() {
   isMobile.value = window.innerWidth < 960
 }
-
 window.addEventListener('resize', handleResize)
 onBeforeUnmount(() => window.removeEventListener('resize', handleResize))
 
@@ -55,14 +68,10 @@ onBeforeUnmount(() => window.removeEventListener('resize', handleResize))
 // ✅ Apex 옵션
 // -------------------------------
 const chartOptions = computed<ApexOptions>(() => ({
-  chart: {
-    type: 'area',
-    stacked: true,
-    toolbar: { show: false },
-  },
+  chart: { type: 'area', stacked: false, toolbar: { show: false } },
   fill: {
     type: 'gradient',
-    gradient: { shadeIntensity: 0.5, opacityFrom: 0.8, opacityTo: 0.25, stops: [0, 100] },
+    gradient: { shadeIntensity: 0.5, opacityFrom: 0.8, opacityTo: 0.25 },
   },
   stroke: { width: 2, curve: 'smooth' },
   colors,
@@ -70,21 +79,14 @@ const chartOptions = computed<ApexOptions>(() => ({
   grid: { borderColor: '#e0e0e0', strokeDashArray: 4 },
   xaxis: {
     categories: Array.from({ length: 30 }, (_, i) => `${i + 1}`),
-    tickPlacement: 'on',
-    labels: {
-      formatter: val => {
-        const num = Number(val)
-
-        return num % 5 === 0 ? `${num}` : ''
-      },
-    },
+    labels: { formatter: val => (Number(val) % 5 === 0 ? `${val}` : '') },
   },
   yaxis: {
     title: { text: 'Cash Flow (USD)' },
     labels: { formatter: val => `$${(val / 1_000_000).toFixed(1)}M` },
   },
   legend: {
-    show: isMobile.value, //  모바일에서만 legend 보이기
+    show: isMobile.value,
     position: 'top',
     horizontalAlign: 'left',
   },
@@ -96,16 +98,14 @@ const chartOptions = computed<ApexOptions>(() => ({
 }))
 
 // -------------------------------
-// ✅ Checkbox 클릭 시 Apex 반영
+// ✅ Checkbox 클릭 시 시리즈 토글
 // -------------------------------
 function toggleSeries(name: string) {
   const chart = chartRef.value?.chart
   if (!chart)
     return
-
   chart.toggleSeries(name)
 
-  // ✅ 내부 상태 반영 후 checkbox 갱신
   setTimeout(() => {
     const hiddenIndexes = chart.w.globals.collapsedSeriesIndices
 
@@ -116,7 +116,8 @@ function toggleSeries(name: string) {
 }
 
 // -------------------------------
-// ✅ 초기화 (모두 표시)
+// ✅ 초기 표시
+// -------------------------------
 onMounted(() => {
   const chart = chartRef.value?.chart
   if (!chart)
@@ -133,11 +134,11 @@ onMounted(() => {
     class="pa-0"
   >
     <VCardTitle class="d-flex align-center justify-space-between px-6 py-4">
-      Cash Flow Overview
+      Cash Flow Overview (Manual Stack)
     </VCardTitle>
 
     <VCardSubtitle class="px-6 text-body-2 text-medium-emphasis">
-      Mobile: Legend only | Desktop: Checkbox only
+      Revenue line matches manual stack top
     </VCardSubtitle>
 
     <VCardText class="px-6 py-4">
@@ -161,7 +162,7 @@ onMounted(() => {
           />
         </VCol>
 
-        <!-- ✅ 차트 영역 -->
+        <!-- ✅ Chart -->
         <VCol
           :cols="isMobile ? 12 : 9"
           class="pt-2"

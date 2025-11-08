@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 import type { ApexOptions } from 'apexcharts'
 
+// -------------------------------
 // ✅ 데이터 정의
+// -------------------------------
 const allSeriesData = {
   revenue: [454950600.0, 464049612.0, 473330604.24, 482797216.32, 492453160.65, 502302223.86, 512348268.34, 522595233.71, 533047138.38, 543708081.15, 554582242.77, 565673887.63, 576987365.38, 588527112.69, 600297654.94, 612303608.04, 624549680.2, 637040673.81, 649781487.28, 662777117.03, 676032659.37, 689553312.56, 703344378.81, 717411266.38, 731759491.71, 746394681.55, 761322575.18, 776549026.68, 792080007.21, 807921607.36],
   operation_expense: [14041000.0, 14321820.0, 14608256.4, 14900421.53, 15198429.96, 15502398.56, 15812446.53, 16128695.46, 16451269.37, 16780294.76, 17115900.65, 17458218.66, 17807383.04, 18163530.7, 18526801.31, 18897337.34, 19275284.09, 19660789.77, 20054005.56, 20455085.67, 20864187.39, 21281471.13, 21707100.56, 22141242.57, 22584067.42, 23035748.77, 23496463.74, 23966393.02, 24445720.88, 24934635.3],
@@ -14,7 +16,9 @@ const allSeriesData = {
   cash_flow_to_equity: [314652634.9, 322070240.31, 329636197.83, 337353474.5, 345225096.7, 353254151.35, 361443787.09, 369797215.55, 378317712.57, 387008619.54, 395873344.64, 404915364.25, 414138224.25, 423545541.45, 433141004.99, 442928377.8, 452911498.07, 463094280.75, 473480719.08, 484074886.17, 494880936.61, 505903108.05, 517145722.93, 528613190.1, 540310006.62, 552240759.46, 564410127.37, 576822882.63, 589483893.0, 602398123.57],
 }
 
-// ✅ series 정의
+// -------------------------------
+// ✅ 시리즈 정의
+// -------------------------------
 const series = ref([
   { name: 'Operation Expense', data: allSeriesData.operation_expense },
   { name: 'Fuel Expense', data: allSeriesData.fuel_expense },
@@ -24,44 +28,63 @@ const series = ref([
   { name: 'Cash Flow to Equity', data: allSeriesData.cash_flow_to_equity },
 ])
 
-// ✅ ApexCharts 옵션
-const chartOptions = ref<ApexOptions>({
+const colors = ['#6A5ACD', '#FF7F50', '#FFD86F', '#5AB0F8', '#C084FC', '#D8D3FF']
+
+// -------------------------------
+// ✅ Checkbox 상태
+// -------------------------------
+const visibleStates = ref<Record<string, boolean>>(
+  Object.fromEntries(series.value.map(s => [s.name, true])),
+)
+
+const chartRef = ref()
+
+// -------------------------------
+// ✅ 반응형 감지 (모바일 / PC)
+// -------------------------------
+const isMobile = ref(window.innerWidth < 960)
+
+function handleResize() {
+  isMobile.value = window.innerWidth < 960
+}
+
+window.addEventListener('resize', handleResize)
+onBeforeUnmount(() => window.removeEventListener('resize', handleResize))
+
+// -------------------------------
+// ✅ Apex 옵션
+// -------------------------------
+const chartOptions = computed<ApexOptions>(() => ({
   chart: {
     type: 'area',
     stacked: true,
-    stackType: 'normal',
     toolbar: { show: false },
   },
   fill: {
     type: 'gradient',
-    gradient: {
-      shadeIntensity: 0.5,
-      opacityFrom: 0.8,
-      opacityTo: 0.25,
-      stops: [0, 100],
-    },
+    gradient: { shadeIntensity: 0.5, opacityFrom: 0.8, opacityTo: 0.25, stops: [0, 100] },
   },
   stroke: { width: 2, curve: 'smooth' },
-  colors: [
-    '#6A5ACD', // Operation Expense (Slate Blue)
-    '#FF7F50', // Fuel Expense
-    '#FFD86F', // Property Tax
-    '#5AB0F8', // Insurance
-    '#C084FC', // Debt Service
-    '#D8D3FF', // Cash Flow to Equity
-  ],
+  colors,
   dataLabels: { enabled: false },
   grid: { borderColor: '#e0e0e0', strokeDashArray: 4 },
   xaxis: {
     categories: Array.from({ length: 30 }, (_, i) => `${i + 1}`),
-    title: { text: 'Year' },
+    tickPlacement: 'on',
+    labels: {
+      formatter: val => {
+        const num = Number(val)
+
+        return num % 5 === 0 ? `${num}` : ''
+      },
+    },
   },
   yaxis: {
     title: { text: 'Cash Flow (USD)' },
     labels: { formatter: val => `$${(val / 1_000_000).toFixed(1)}M` },
   },
   legend: {
-    show: true,
+    show: isMobile.value, //  모바일에서만 legend 보이기
     position: 'top',
     horizontalAlign: 'left',
   },
@@ -70,17 +93,38 @@ const chartOptions = ref<ApexOptions>({
     intersect: false,
     y: { formatter: val => `$${val.toLocaleString()}` },
   },
-})
+}))
 
-// ✅ Chart 인스턴스 참조
-const chartRef = ref()
-
-// ✅ legend toggle과 동일하게 작동하는 체크박스 핸들러
+// -------------------------------
+// ✅ Checkbox 클릭 시 Apex 반영
+// -------------------------------
 function toggleSeries(name: string) {
   const chart = chartRef.value?.chart
-  if (chart)
-    chart.toggleSeries(name)
+  if (!chart)
+    return
+
+  chart.toggleSeries(name)
+
+  // ✅ 내부 상태 반영 후 checkbox 갱신
+  setTimeout(() => {
+    const hiddenIndexes = chart.w.globals.collapsedSeriesIndices
+
+    chart.w.config.series.forEach((s: any, i: number) => {
+      visibleStates.value[s.name] = !hiddenIndexes.includes(i)
+    })
+  }, 0)
 }
+
+// -------------------------------
+// ✅ 초기화 (모두 표시)
+onMounted(() => {
+  const chart = chartRef.value?.chart
+  if (!chart)
+    return
+  nextTick(() => {
+    series.value.forEach(s => chart.showSeries(s.name))
+  })
+})
 </script>
 
 <template>
@@ -89,43 +133,43 @@ function toggleSeries(name: string) {
     class="pa-0"
   >
     <VCardTitle class="d-flex align-center justify-space-between px-6 py-4">
-      Cash Flow Overview (Interactive)
+      Cash Flow Overview
     </VCardTitle>
 
     <VCardSubtitle class="px-6 text-body-2 text-medium-emphasis">
-      Click checkboxes to show or hide each series (same as legend)
+      Mobile: Legend only | Desktop: Checkbox only
     </VCardSubtitle>
 
     <VCardText class="px-6 py-4">
       <VRow>
-        <!-- 체크박스 구역 -->
+        <!-- ✅ PC 전용 Checkbox -->
         <VCol
+          v-if="!isMobile"
           cols="12"
           md="3"
           class="d-flex flex-column gap-y-2"
         >
           <VCheckbox
-            v-for="s in series"
+            v-for="(s, idx) in series"
             :key="s.name"
             :label="s.name"
-            color="primary"
-            density="comfortable"
+            :color="colors[idx]"
             hide-details
-            value
-            @click.stop="toggleSeries(s.name)"
+            density="comfortable"
+            :model-value="visibleStates[s.name]"
+            @change="toggleSeries(s.name)"
           />
         </VCol>
 
-        <!-- 차트 영역 -->
+        <!-- ✅ 차트 영역 -->
         <VCol
-          cols="12"
-          md="9"
+          :cols="isMobile ? 12 : 9"
           class="pt-2"
         >
           <VueApexCharts
             ref="chartRef"
             type="area"
-            height="550"
+            height="500"
             :series="series"
             :options="chartOptions"
           />
