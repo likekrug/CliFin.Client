@@ -1,18 +1,9 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
+import { onMounted, ref } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 import type { ApexOptions } from 'apexcharts'
 
-// -------------------------------
 // ✅ 데이터 정의
-// -------------------------------
-interface SeriesItem {
-  key: keyof typeof allSeriesData
-  name: string
-  color: string
-  visible: boolean
-}
-
 const allSeriesData = {
   revenue: [454950600.0, 464049612.0, 473330604.24, 482797216.32, 492453160.65, 502302223.86, 512348268.34, 522595233.71, 533047138.38, 543708081.15, 554582242.77, 565673887.63, 576987365.38, 588527112.69, 600297654.94, 612303608.04, 624549680.2, 637040673.81, 649781487.28, 662777117.03, 676032659.37, 689553312.56, 703344378.81, 717411266.38, 731759491.71, 746394681.55, 761322575.18, 776549026.68, 792080007.21, 807921607.36],
   operation_expense: [14041000.0, 14321820.0, 14608256.4, 14900421.53, 15198429.96, 15502398.56, 15812446.53, 16128695.46, 16451269.37, 16780294.76, 17115900.65, 17458218.66, 17807383.04, 18163530.7, 18526801.31, 18897337.34, 19275284.09, 19660789.77, 20054005.56, 20455085.67, 20864187.39, 21281471.13, 21707100.56, 22141242.57, 22584067.42, 23035748.77, 23496463.74, 23966393.02, 24445720.88, 24934635.3],
@@ -23,91 +14,56 @@ const allSeriesData = {
   cash_flow_to_equity: [314652634.9, 322070240.31, 329636197.83, 337353474.5, 345225096.7, 353254151.35, 361443787.09, 369797215.55, 378317712.57, 387008619.54, 395873344.64, 404915364.25, 414138224.25, 423545541.45, 433141004.99, 442928377.8, 452911498.07, 463094280.75, 473480719.08, 484074886.17, 494880936.61, 505903108.05, 517145722.93, 528613190.1, 540310006.62, 552240759.46, 564410127.37, 576822882.63, 589483893.0, 602398123.57],
 }
 
-// -------------------------------
-// ✅ Checkbox 리스트
-// -------------------------------
-const seriesList = ref<SeriesItem[]>([
-  { key: 'operation_expense', name: 'Operation expense', color: '#5DBE88', visible: true },
-  { key: 'fuel_expense', name: 'Fuel expense', color: '#FF7F50', visible: true },
-  { key: 'property_tax_exp', name: 'Property tax', color: '#FFD700', visible: true },
-  { key: 'insurance_expense', name: 'Insurance', color: '#1E90FF', visible: true },
-  { key: 'debt_service', name: 'Debt service', color: '#9932CC', visible: true },
-  { key: 'cash_flow_to_equity', name: 'Cash flow to equity', color: '#A9A9A9', visible: true },
+// ✅ series 정의
+const series = ref([
+  { name: 'Operation Expense', data: allSeriesData.operation_expense },
+  { name: 'Fuel Expense', data: allSeriesData.fuel_expense },
+  { name: 'Property Tax', data: allSeriesData.property_tax_exp },
+  { name: 'Insurance', data: allSeriesData.insurance_expense },
+  { name: 'Debt Service', data: allSeriesData.debt_service },
+  { name: 'Cash Flow to Equity', data: allSeriesData.cash_flow_to_equity },
 ])
 
-const renderOrder = ref<string[]>(seriesList.value.map(s => s.key))
-const series = ref<any[]>([])
-
-// -------------------------------
-// ✅ Checkbox 토글 시 순서 관리
-// -------------------------------
-function toggleVisibility(item: SeriesItem) {
-  item.visible = !item.visible
-  if (item.visible) {
-    renderOrder.value = renderOrder.value.filter(k => k !== item.key)
-    renderOrder.value.push(item.key)
-  }
-  else {
-    renderOrder.value = renderOrder.value.filter(k => k !== item.key)
-  }
-}
-
-// -------------------------------
-// ✅ reactive series 생성
-// -------------------------------
-watchEffect(() => {
-  const orderedSeries = renderOrder.value
-    .map(key => seriesList.value.find(s => s.key === key))
-    .filter((item): item is SeriesItem => item !== undefined && item.visible)
-
-  series.value = orderedSeries.map(s => ({
-    name: s.name,
-    data: allSeriesData[s.key],
-    type: 'area',
-    yAxisIndex: 0,
-  }))
-})
-
-// -------------------------------
-// ✅ Chart 옵션
-// -------------------------------
+// ✅ ApexCharts 옵션
 const chartOptions = ref<ApexOptions>({
   chart: {
-    id: 'stackedAreaChart',
     type: 'area',
     stacked: true,
     stackType: 'normal',
     toolbar: { show: false },
-    zoom: { enabled: false },
   },
-  stroke: { curve: 'straight', width: 2 },
   fill: {
     type: 'gradient',
     gradient: {
-      shadeIntensity: 0.4,
-      opacityFrom: 0.85,
-      opacityTo: 0.3,
+      shadeIntensity: 0.5,
+      opacityFrom: 0.8,
+      opacityTo: 0.25,
       stops: [0, 100],
     },
   },
+  stroke: { width: 2, curve: 'smooth' },
+  colors: [
+    '#6A5ACD', // Operation Expense (Slate Blue)
+    '#FF7F50', // Fuel Expense
+    '#FFD86F', // Property Tax
+    '#5AB0F8', // Insurance
+    '#C084FC', // Debt Service
+    '#D8D3FF', // Cash Flow to Equity
+  ],
   dataLabels: { enabled: false },
-  markers: { size: 0 },
   grid: { borderColor: '#e0e0e0', strokeDashArray: 4 },
+  xaxis: {
+    categories: Array.from({ length: 30 }, (_, i) => `${i + 1}`),
+    title: { text: 'Year' },
+  },
+  yaxis: {
+    title: { text: 'Cash Flow (USD)' },
+    labels: { formatter: val => `$${(val / 1_000_000).toFixed(1)}M` },
+  },
   legend: {
     show: true,
     position: 'top',
     horizontalAlign: 'left',
-    fontSize: '13px',
-    fontWeight: 500,
-    markers: { width: 10, height: 10, radius: 12 },
-  },
-  xaxis: {
-    categories: Array.from({ length: 30 }, (_, i) => `Year ${i + 1}`),
-    title: { text: 'Year', style: { fontSize: '13px', fontWeight: 600 } },
-  },
-  yaxis: {
-    title: { text: 'Cash Flow (USD)', style: { fontSize: '13px', fontWeight: 600 } },
-    labels: { formatter: val => `$${(val / 1_000_000).toFixed(1)}M` },
   },
   tooltip: {
     shared: true,
@@ -115,6 +71,16 @@ const chartOptions = ref<ApexOptions>({
     y: { formatter: val => `$${val.toLocaleString()}` },
   },
 })
+
+// ✅ Chart 인스턴스 참조
+const chartRef = ref()
+
+// ✅ legend toggle과 동일하게 작동하는 체크박스 핸들러
+function toggleSeries(name: string) {
+  const chart = chartRef.value?.chart
+  if (chart)
+    chart.toggleSeries(name)
+}
 </script>
 
 <template>
@@ -122,50 +88,46 @@ const chartOptions = ref<ApexOptions>({
     outlined
     class="pa-0"
   >
-    <!-- ✅ 카드 헤더 -->
     <VCardTitle class="d-flex align-center justify-space-between px-6 py-4">
-      <span class="text-h6 font-weight-semibold">Cash Flow Overview (Stacked)</span>
+      Cash Flow Overview (Interactive)
     </VCardTitle>
 
     <VCardSubtitle class="px-6 text-body-2 text-medium-emphasis">
-      💡 Click on a legend to show or hide a series. (Single Y-axis, 1–30 years)
+      Click checkboxes to show or hide each series (same as legend)
     </VCardSubtitle>
 
-    <!-- ✅ 카드 본문 -->
     <VCardText class="px-6 py-4">
       <VRow>
-        <!-- ✅ 체크박스 -->
+        <!-- 체크박스 구역 -->
         <VCol
           cols="12"
           md="3"
           class="d-flex flex-column gap-y-2"
         >
           <VCheckbox
-            v-for="item in seriesList"
-            :key="item.key"
-            v-model="item.visible"
-            :label="item.name"
-            :color="item.color"
+            v-for="s in series"
+            :key="s.name"
+            :label="s.name"
+            color="primary"
             density="comfortable"
             hide-details
-            @click.stop="toggleVisibility(item)"
+            value
+            @click.stop="toggleSeries(s.name)"
           />
         </VCol>
 
-        <!-- ✅ 차트 -->
+        <!-- 차트 영역 -->
         <VCol
           cols="12"
           md="9"
           class="pt-2"
         >
           <VueApexCharts
+            ref="chartRef"
             type="area"
             height="550"
             :series="series"
-            :options="{
-              ...chartOptions,
-              colors: seriesList.filter(s => s.visible).map(s => s.color),
-            }"
+            :options="chartOptions"
           />
         </VCol>
       </VRow>

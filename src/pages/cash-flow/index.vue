@@ -7,6 +7,7 @@ import CashFlowChart2 from '@/views/pages/cash-flow/CashFlowChart2.vue'
 import CashFlowChart3 from '@/views/pages/cash-flow/CashFlowChart3.vue'
 import CashFlowChartJM from '@/views/pages/cash-flow/CashFlowChartJM.vue'
 import CashFlowChartJS from '@/views/pages/cash-flow/CashFlowChartJS.vue'
+import TestChart from '@/views/pages/cash-flow/TestChart.vue'
 
 // ----------------------
 // 🔹 프로젝트 리스트 데이터
@@ -30,7 +31,7 @@ const selectedProject = ref(projects.value[0])
       <!-- 왼쪽: 프로젝트 리스트 -->
       <VCol
         cols="12"
-        md="3"
+        md="2"
       >
         <ProjectList
           v-model:selected-project="selectedProject"
@@ -41,7 +42,7 @@ const selectedProject = ref(projects.value[0])
       <!-- 오른쪽: 보고서 + 그래프 -->
       <VCol
         cols="12"
-        md="9"
+        md="10"
       >
         <VRow>
           <!-- 상단: 보고서 -->
@@ -55,14 +56,25 @@ const selectedProject = ref(projects.value[0])
             <CashFlowChart :project="selectedProject" />
           </VCol>
 
-          <!-- 하단: 그래프2 -->
+          <!-- 하단: 그래프2 라인 그래프 -->
 
-          <VCol cols="12">
+          <!--
+            <VCol cols="12">
             <CashFlowChart2 />
-          </VCol>
+            </VCol>
+          -->
+
+          <!-- 2차트 2 개 분리 한것 -->
+          <!--
+            <VCol cols="12">
+            <CashFlowChart3 />
+            </VCol>
+          -->
+
+          <!-- 하단: 제미나이 -->
 
           <VCol cols="12">
-            <CashFlowChart3 />
+            <TestChart />
           </VCol>
 
           <!-- 하단: 제미나이 -->
@@ -70,10 +82,12 @@ const selectedProject = ref(projects.value[0])
             <CashFlowChartJM />
           </VCol>
 
-          <!-- 하단: 그래프2 -->
-          <VCol cols="12">
+          <!-- 하단: 그래프2 chart js -->
+          <!--
+            <VCol cols="12">
             <CashFlowChartJS />
-          </VCol>
+            </VCol>
+          -->
         </VRow>
       </VCol>
     </VRow>

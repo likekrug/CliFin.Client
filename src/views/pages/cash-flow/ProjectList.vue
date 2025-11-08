@@ -26,7 +26,11 @@ const selectProject = (project: Project) => emit('update:selectedProject', proje
       :class="{ active: selectedProject.id === project.id }"
       @click="selectProject(project)"
     >
-      <div class="text-h6 font-weight-semibold">
+      <div
+        class="text-h6 font-weight-semibold text-truncate"
+        style="max-inline-size: 180px;"
+        :title="project.name"
+      >
         {{ project.name }}
       </div>
       <div class="text-body-2 text-medium-emphasis">
