@@ -24,9 +24,7 @@ const toggleCard = () => {
   >
     <!-- ✅ 카드 헤더 -->
     <VCardTitle class="d-flex align-center justify-space-between px-6 py-4">
-      <span class="text-h6 font-weight-semibold">
-        Baseline Projection Report
-      </span>
+      Baseline Projection Report
 
       <VBtn
         icon
@@ -217,28 +215,24 @@ const toggleCard = () => {
 
 /* ✅ 중간 제목: 검은색~회색 사이 */
 .section-title {
-  color: rgba(var(--v-theme-on-surface), 0.75);
+  color: rgba(var(--v-theme-on-surface), 0.6);
   font-size: 15px;
   font-weight: 600;
   margin-block-end: 10px;
 }
 
-/* ✅ Divider: background-color 기반으로 명시 지정 */
 .custom-divider {
   border: none !important;
-  background-color: rgba(var(--v-theme-on-surface), 0.12) !important;
-  block-size: 1px !important;
+  border-block-start: 1px solid rgba(var(--v-theme-on-surface), 0.15) !important;
   opacity: 1 !important;
 }
 
-/* ✅ 라이트모드: 살짝 더 진하게 */
 :root[data-theme="light"] .custom-divider {
-  background-color: rgba(var(--v-theme-on-surface), 0.18) !important;
+  border-block-start-color: rgba(var(--v-theme-on-surface), 0.2) !important;
 }
 
-/* ✅ 다크모드: 은은하게 */
 :root[data-theme="dark"] .custom-divider {
-  background-color: rgba(var(--v-theme-on-surface), 0.1) !important;
+  border-block-start-color: rgba(var(--v-theme-on-surface), 0.1) !important;
 }
 
 /* 🔹 공통 구조 */
