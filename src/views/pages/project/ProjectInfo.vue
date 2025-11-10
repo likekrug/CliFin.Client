@@ -267,7 +267,7 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
       <div class="d-flex align-center justify-space-between w-100">
         <div class="d-flex align-center">
           <VCardTitle class="me-2">
-            Asset Characteristics
+            Asset Specifications
           </VCardTitle>
           <VAvatar
             color="warning"
@@ -500,7 +500,7 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
       <div class="d-flex align-center justify-space-between w-100">
         <div class="d-flex align-center">
           <VCardTitle class="me-2">
-            Financing Terms & Tax
+            Financing Terms Conditions
           </VCardTitle>
           <VAvatar
             size="28"
@@ -553,7 +553,7 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
             </VRow>
           </div>
 
-          <div>
+          <div class="mb-4">
             <div class="d-flex align-center text-body-1 mb-3">
               <div class="vertical-bar me-2" /> Tax
             </div>
@@ -572,52 +572,44 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
               </VCol>
             </VRow>
           </div>
+
+          <div class="mb-4">
+            <div class="d-flex align-center text-body-1 mb-3">
+              <div class="vertical-bar me-2" /> DSRA
+            </div>
+            <VRow>
+              <VCol
+                cols="12"
+                md="3"
+              >
+                <div class="d-flex align-center">
+                  <span class="text-body-1 me-2">No</span>
+                  <VSwitch
+                    v-model="dsra.enabled"
+                    color="primary"
+                    inset
+                    hide-details
+                  />
+                  <span class="text-body-1 ms-2">Yes</span>
+                </div>
+              </VCol>
+              <VCol
+                v-if="dsra.enabled"
+                cols="12"
+                md="3"
+              >
+                <VTextField
+                  v-model="dsra.threshold"
+                  label="Threshold"
+                  hint="e.g. 1.5"
+                  persistent-hint
+                />
+              </VCol>
+            </VRow>
+          </div>
         </VCardText>
       </div>
     </VExpandTransition>
-  </VCard>
-
-  <!-- ✅ DSRA -->
-  <VCard
-    flat
-    variant="outlined"
-    class="mt-3"
-  >
-    <VCardItem>
-      <VCardTitle>DSRA</VCardTitle>
-    </VCardItem>
-    <VDivider />
-    <VCardText>
-      <VRow class="align-center">
-        <VCol
-          cols="12"
-          md="3"
-        >
-          <div class="d-flex align-center">
-            <span class="text-body-1 me-2">No</span>
-            <VSwitch
-              v-model="dsra.enabled"
-              color="primary"
-              inset
-              hide-details
-            />
-            <span class="text-body-1 ms-2">Yes</span>
-          </div>
-        </VCol>
-        <VCol
-          v-if="dsra.enabled"
-          cols="12"
-          md="3"
-        >
-          <VTextField
-            v-model="dsra.threshold"
-            label="Threshold"
-            hint="e.g. 1.5"
-            persistent-hint
-          />
-        </VCol>
-      </VRow>
-    </VCardText>
   </VCard>
 
   <!-- ✅ Information Drawer -->

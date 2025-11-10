@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import ProjectList from '@/views/pages/cash-flow/ProjectList.vue'
-import CashFlowReport from '@/views/pages/cash-flow/CashFlowReport.vue'
-import CashFlowChart from '@/views/pages/cash-flow/CashFlowChart.vue'
-import CashFlowChart2 from '@/views/pages/cash-flow/CashFlowChart2.vue'
-import CashFlowChart3 from '@/views/pages/cash-flow/CashFlowChart3.vue'
-import CashFlowChartJM from '@/views/pages/cash-flow/CashFlowChartJM.vue'
-import CashFlowChartJS from '@/views/pages/cash-flow/CashFlowChartJS.vue'
-import TestChart from '@/views/pages/cash-flow/TestChart.vue'
 import CashFlowPlotly from '@/views/pages/cash-flow/CashFlowPlotly.vue'
+import CashFlowReport from '@/views/pages/cash-flow/CashFlowReport.vue'
+import ProjectList from '@/views/pages/cash-flow/ProjectList.vue'
+import TestChart from '@/views/pages/cash-flow/TestChart.vue'
 
 // ----------------------
 // 🔹 프로젝트 리스트 데이터

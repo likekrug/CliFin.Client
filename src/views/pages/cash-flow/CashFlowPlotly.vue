@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import VChart from 'vue-echarts'
 
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
@@ -223,15 +223,15 @@ const chartOptions = computed(() => {
         type: 'value',
         name: 'Cash Flow (USD)',
         nameLocation: 'middle',
-        nameGap: 65, // Y축과 이름 간격
+        nameGap: 75, // Y축과 이름 간격
         nameRotate: 90, // ← 🔹 이름을 세로로 세움
-        nameTextStyle: { fontSize: 11, color: '#2E2E2E', fontWeight: 600 },
+        nameTextStyle: { fontSize: 11, color: '#2E2E2E', fontWeight: 650 },
 
         axisLabel: {
           fontSize: 11,
-          color: '#2E263DB3', // 🔹 라벨 글자 색상
+
           fontFamily: '"Public Sans", "Helvetica Neue", Arial, sans-serif',
-          fontWeight: 550,
+          fontWeight: 540,
           formatter: (val: number) => `$${(val / 1_000_000).toFixed(1)}M`,
         },
         splitLine: { show: true, lineStyle: { type: 'dashed', color: '#e0e0e0' } },
@@ -240,7 +240,7 @@ const chartOptions = computed(() => {
         type: 'value',
         name: 'DSCR',
         nameLocation: 'middle',
-        nameGap: 45, // Y축과 이름 간격
+        nameGap: 45, // Y축과 이름 간3격
         nameRotate: 90, // ← 🔹 이름을 세로로 세움
         nameTextStyle: { fontSize: 10, color: '#FF69B4', fontWeight: 600 },
         position: 'right',
