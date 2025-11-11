@@ -15,6 +15,21 @@ const { projects, selectedProject } = defineProps<Props>()
 const emit = defineEmits(['update:selectedProject'])
 
 const selectProject = (project: Project) => emit('update:selectedProject', project)
+
+const boardActions = [
+  {
+    title: 'Modify Project',
+    prependIcon: 'ri-pencil-line',
+
+    // onClick: () => { isBoardNameEditing.value = true },
+  },
+  {
+    title: 'Delete',
+    prependIcon: 'ri-delete-bin-line',
+
+    // onClick: () => (emit('deleteBoard', props.boardId)),
+  },
+]
 </script>
 
 <template>
@@ -33,8 +48,15 @@ const selectProject = (project: Project) => emit('update:selectedProject', proje
       >
         {{ project.name }}
       </div>
-      <div class="text-body-2 text-medium-emphasis">
-        {{ project.type }}
+      <div class="d-flex align-center justify-space-between text-body-2 text-medium-emphasis">
+        <span>{{ project.type }}</span>
+
+        <MoreBtn
+          size="x-small"
+          icon-size="20"
+          :menu-list="boardActions"
+          item-props
+        />
       </div>
       <VDivider class="my-2" />
       <div class="text-body-2">

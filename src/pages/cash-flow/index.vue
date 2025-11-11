@@ -20,83 +20,78 @@ const selectedProject = ref(projects.value[0])
 </script>
 
 <template>
-  <VContainer
-    fluid
-    class="pa-4"
-  >
-    <VRow>
-      <!-- 왼쪽: 프로젝트 리스트 -->
-      <VCol
-        cols="12"
-        md="2"
-      >
-        <ProjectList
-          v-model:selected-project="selectedProject"
-          :projects="projects"
-        />
-      </VCol>
+  <VRow>
+    <!-- 왼쪽: 프로젝트 리스트 -->
+    <VCol
+      cols="12"
+      md="2"
+    >
+      <ProjectList
+        v-model:selected-project="selectedProject"
+        :projects="projects"
+      />
+    </VCol>
 
-      <!-- 오른쪽: 보고서 + 그래프 -->
-      <VCol
-        cols="12"
-        md="10"
-      >
-        <VRow>
-          <!-- 상단: 보고서 -->
+    <!-- 오른쪽: 보고서 + 그래프 -->
+    <VCol
+      cols="12"
+      md="10"
+    >
+      <VRow>
+        <!-- 상단: 보고서 -->
+        <VCol cols="12">
+          <CashFlowReportCard />
+        </VCol>
+        <!-- 상단: 보고서 -->
+        <VCol cols="12">
+          <CashFlowReport :project="selectedProject" />
+        </VCol>
+
+        <!-- 하단: 그래프 -->
+
+        <!--
           <VCol cols="12">
-            <CashFlowReportCard />
+          <CashFlowChart :project="selectedProject" />
           </VCol>
-          <!-- 상단: 보고서 -->
+        -->
+
+        <!-- 하단: 그래프2 라인 그래프 -->
+
+        <!--
           <VCol cols="12">
-            <CashFlowReport :project="selectedProject" />
+          <CashFlowChart2 />
+          </VCol>
+        -->
+
+        <!-- 2차트 2 개 분리 한것 -->
+        <!--
+          <VCol cols="12">
+          <CashFlowChart3 />
+          </VCol>
+        -->
+
+        <VCol cols="12">
+          <CashFlowPlotly />
+
+          <VCol cols="12">
+            <TestChart />
           </VCol>
 
-          <!-- 하단: 그래프 -->
-
+          <!-- 하단: 제미나이 -->
           <!--
             <VCol cols="12">
-            <CashFlowChart :project="selectedProject" />
+            <CashFlowChartJM />
             </VCol>
           -->
 
-          <!-- 하단: 그래프2 라인 그래프 -->
-
+          <!-- 하단: 그래프2 chart js -->
           <!--
             <VCol cols="12">
-            <CashFlowChart2 />
+            <CashFlowChartJS />
             </VCol>
           -->
-
-          <!-- 2차트 2 개 분리 한것 -->
-          <!--
-            <VCol cols="12">
-            <CashFlowChart3 />
-            </VCol>
-          -->
-
-          <VCol cols="12">
-            <CashFlowPlotly />
-
-            <VCol cols="12">
-              <TestChart />
-            </VCol>
-
-            <!-- 하단: 제미나이 -->
-            <!--
-              <VCol cols="12">
-              <CashFlowChartJM />
-              </VCol>
-            -->
-
-            <!-- 하단: 그래프2 chart js -->
-            <!--
-              <VCol cols="12">
-              <CashFlowChartJS />
-              </VCol>
-            -->
-          </vcol>
-        </VRow>
-      </VCol>
-    </VRow>
-  </VContainer>
+        </vcol>
+      </VRow>
+    </VCol>
+  </VRow>
 </template>

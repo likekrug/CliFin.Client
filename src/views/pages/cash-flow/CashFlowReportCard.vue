@@ -40,55 +40,62 @@ const logisticData = ref([
 </script>
 
 <template>
-  <VRow>
+  <!-- ✅ align-stretch로 높이 맞추고, md=4으로 3등분 -->
+  <VRow class="align-stretch">
     <VCol
       v-for="(data, index) in logisticData"
       :key="index"
       cols="12"
       md="4"
-      sm="6"
+      sm="12"
+      class="d-flex"
     >
-      <div>
-        <VCard
-          class="logistics-card-statistics cursor-pointer"
-          :style="data.isHover ? `border-block-end-color: rgb(var(--v-theme-${data.color}))` : `border-block-end-color: rgba(var(--v-theme-${data.color}),0.7)`"
-          @mouseenter="data.isHover = true"
-          @mouseleave="data.isHover = false"
-        >
-          <VCardText>
-            <div class="d-flex align-center gap-x-4 mb-2">
-              <VAvatar
-                variant="tonal"
-                :color="data.color"
-                rounded
-              >
-                <VIcon
-                  :icon="data.icon"
-                  size="24"
-                />
-              </VAvatar>
-              <h4 class="text-h4 mb-0">
-                $12,000,000
-              </h4>
-            </div>
-
-            <h6 class="text-h6 font-weight-regular">
-              {{ data.title }}
-            </h6>
-            <!-- 세부항목 -->
-            <div
-              v-for="(item, i) in data.items"
-              :key="i"
-              class="d-flex align-center"
+      <VCard
+        class="logistics-card-statistics cursor-pointer flex-grow-1 h-100"
+        :style="data.isHover
+          ? `border-block-end-color: rgb(var(--v-theme-${data.color}))`
+          : `border-block-end-color: rgba(var(--v-theme-${data.color}),0.7)`"
+        @mouseenter="data.isHover = true"
+        @mouseleave="data.isHover = false"
+      >
+        <VCardText class="px-6 py-4 h-100">
+          <!-- 헤더 -->
+          <div class="d-flex align-center gap-x-4 mb-2">
+            <VAvatar
+              variant="tonal"
+              :color="data.color"
+              rounded
             >
-              <div class="text-body-1 font-weight-medium me-2">
-                {{ item.value }}
-              </div>
-              <span class="text-sm text-disabled text-end">{{ item.label }}</span>
+              <VIcon
+                :icon="data.icon"
+                size="24"
+              />
+            </VAvatar>
+            <h4 class="text-h4 mb-0">
+              $12,000,000
+            </h4>
+          </div>
+
+          <!-- 타이틀 -->
+          <h6 class="text-h6 font-weight-regular mb-3">
+            {{ data.title }}
+          </h6>
+
+          <!-- 세부 항목 -->
+          <div
+            v-for="(item, i) in data.items"
+            :key="i"
+            class="d-flex align-center justify-space-between mb-1"
+          >
+            <div class="text-body-1 font-weight-medium me-2">
+              {{ item.value }}
             </div>
-          </VCardText>
-        </VCard>
-      </div>
+            <span class="text-sm text-disabled text-end">
+              {{ item.label }}
+            </span>
+          </div>
+        </VCardText>
+      </VCard>
     </VCol>
   </VRow>
 </template>
@@ -97,6 +104,7 @@ const logisticData = ref([
 @use "@core/scss/base/mixins" as mixins;
 
 .logistics-card-statistics {
+  border-radius: 8px;
   border-block-end-style: solid;
   border-block-end-width: 2px;
 
@@ -111,10 +119,8 @@ const logisticData = ref([
 }
 
 .skin--bordered {
-  .logistics-card-statistics {
-    &:hover {
-      margin-block-end: -2px;
-    }
+  .logistics-card-statistics:hover {
+    margin-block-end: -2px;
   }
 }
 </style>
