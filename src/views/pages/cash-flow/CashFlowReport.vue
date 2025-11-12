@@ -23,20 +23,21 @@ const toggleCard = () => {
     class="pa-0 projection-card"
   >
     <!-- ✅ 카드 헤더 -->
-
-    <VBtn
-      icon
-      variant="tonal"
-      size="32"
-      color="warning"
-      class="rounded"
-      @click="toggleCard"
-    >
-      <VIcon
-        :icon="showReport ? 'ri-arrow-left-line' : 'ri-question-line'"
-        size="20"
-      />
-    </VBtn>
+    <VCardTitle>
+      Baseline Projection Report
+      <VBtn
+        icon
+        variant="tonal"
+        size="32"
+        color="warning"
+        class="rounded"
+        @click="toggleCard"
+      >
+        <VIcon
+          :icon="showReport ? 'ri-arrow-left-line' : 'ri-question-line'"
+          size="20"
+        />
+      </VBtn>
     </VCardTitle>
 
     <VDivider class="custom-divider" />
