@@ -3,12 +3,12 @@ import { LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TitleComponent, ToolboxComponent, TooltipComponent } from 'echarts/components'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed } from 'vue'
 import VChart from 'vue-echarts'
 
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, ToolboxComponent])
 
-// ✅ 원본 데이터 (수정 금지)
+// ✅ 데이터 원본 (변경 금지)
 const allSeriesData = {
   revenue: [454950600, 464049612, 473330604.24, 482797216.32, 492453160.65, 502302223.86, 512348268.34, 522595233.71, 533047138.38, 543708081.15, 554582242.77, 565673887.63, 576987365.38, 588527112.69, 600297654.94, 612303608.04, 624549680.2, 637040673.81, 649781487.28, 662777117.03, 676032659.37, 689553312.56, 703344378.81, 717411266.38, 731759491.71, 746394681.55, 761322575.18, 776549026.68, 792080007.21, 807921607.36],
   operation_expense: [14041000, 14321820, 14608256.4, 14900421.53, 15198429.96, 15502398.56, 15812446.53, 16128695.46, 16451269.37, 16780294.76, 17115900.65, 17458218.66, 17807383.04, 18163530.7, 18526801.31, 18897337.34, 19275284.09, 19660789.77, 20054005.56, 20455085.67, 20864187.39, 21281471.13, 21707100.56, 22141242.57, 22584067.42, 23035748.77, 23496463.74, 23966393.02, 24445720.88, 24934635.3],
@@ -20,80 +20,73 @@ const allSeriesData = {
   dscr: [6.58, 6.58, 6.65, 6.65, 6.86, 6.86, 6.98, 6.98, 7.13, 7.13, 7.28, 7.28, 7.42, 7.42, 7.57, 7.57, 7.71, 7.71, 7.86, 7.86, 8.02, 8.02, 8.19, 8.19, 8.36, 8.36, 8.52, 8.52, 8.68, 8.68],
 }
 
-// ✅ Series 정의 (stacked area)
+// ✅ Stack Area + Cash Flow 포함
 const baseSeries = [
-  {
-    name: 'Operation Expense',
-    color: ['rgb(128, 255, 165)', 'rgb(1, 191, 236)'],
-    data: allSeriesData.operation_expense,
-  },
-  {
-    name: 'Fuel Expense',
-    color: ['rgb(0, 221, 255)', 'rgb(77, 119, 255)'],
-    data: allSeriesData.fuel_expense,
-  },
-  {
-    name: 'Property Tax',
-    color: ['rgb(55, 162, 255)', 'rgb(116, 21, 219)'],
-    data: allSeriesData.property_tax_exp,
-  },
-  {
-    name: 'Insurance',
-    color: ['rgb(255, 0, 135)', 'rgb(135, 0, 157)'],
-    data: allSeriesData.insurance_expense,
-  },
-  {
-    name: 'Debt Service',
-    color: ['rgb(255, 191, 0)', 'rgb(224, 62, 76)'],
-    data: allSeriesData.debt_service,
-  },
+  { name: 'Operation Expense', color: ['#80FFA5', '#00DDFF'], data: allSeriesData.operation_expense },
+  { name: 'Fuel Expense', color: ['#00DDFF', '#37A2FF'], data: allSeriesData.fuel_expense },
+  { name: 'Property Tax', color: ['#37A2FF', '#FF0087'], data: allSeriesData.property_tax_exp },
+  { name: 'Insurance', color: ['#FF0087', '#FFBF00'], data: allSeriesData.insurance_expense },
+  { name: 'Debt Service', color: ['#FFBF00', '#FF8C00'], data: allSeriesData.debt_service },
+  { name: 'Cash Flow to Equity', color: ['#00FF80', '#009944'], data: allSeriesData.cash_flow_to_equity },
 ]
 
-// ✅ 반응형 처리
-const isMobile = ref(window.innerWidth < 960)
-const handleResize = () => (isMobile.value = window.innerWidth < 960)
+const revenueLine = { name: 'Revenue', color: '#111', data: allSeriesData.revenue }
+const dscrLine = { name: 'DSCR', color: '#FF69B4', data: allSeriesData.dscr }
 
-window.addEventListener('resize', handleResize)
-onBeforeUnmount(() => window.removeEventListener('resize', handleResize))
-
-// ✅ ECharts 옵션
-const chartOptions = computed(() => {
-  return {
-    color: ['#80FFA5', '#00DDFF', '#37A2FF', '#FF0087', '#FFBF00'],
-    title: {
-      text: 'Gradient Stacked Area Chart',
-      left: 'center',
-      textStyle: { fontSize: 15, color: '#333', fontWeight: 600 },
+const chartOptions = computed(() => ({
+  tooltip: {
+    trigger: 'axis',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderColor: '#ddd',
+    borderWidth: 1,
+    textStyle: { color: '#333' },
+    axisPointer: {
+      type: 'cross', // ✅ 세로선 + Y축 가이드라인
+      label: { backgroundColor: '#6a7985' },
     },
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'cross',
-        label: { backgroundColor: '#6a7985' },
-      },
+  },
+  legend: {
+    bottom: 0,
+    icon: 'circle', // ✅ 이 한 줄이 핵심!
+    itemWidth: 10,
+    itemHeight: 10,
+    itemGap: 20,
+    textStyle: {
+      fontSize: 12,
+      color: '#444',
     },
-    legend: {
-      data: baseSeries.map(s => s.name),
-      bottom: 0,
-      textStyle: { fontSize: 12 },
+    data: [...baseSeries.map(s => s.name), 'Revenue', 'DSCR'],
+  },
+  grid: { left: '5%', right: '5%', bottom: '12%', containLabel: true },
+  xAxis: {
+    type: 'category',
+    boundaryGap: false,
+    data: Array.from({ length: 30 }, (_, i) => `Year ${i + 1}`),
+  },
+  yAxis: [
+    {
+      type: 'value',
+      name: 'Cash Flow (USD)',
+      axisLabel: { formatter: (v: number) => `$${(v / 1_000_000).toFixed(1)}M` },
+      splitLine: { show: true, lineStyle: { color: '#e0e0e0', type: 'dashed' } },
     },
-    toolbox: { feature: { saveAsImage: {} } },
-    grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
-    xAxis: [
-      {
-        type: 'category',
-        boundaryGap: false,
-        data: Array.from({ length: 30 }, (_, i) => `Year ${i + 1}`),
-      },
-    ],
-    yAxis: [{ type: 'value' }],
-    series: baseSeries.map(s => ({
+    {
+      type: 'value',
+      name: 'DSCR',
+      position: 'right',
+      axisLabel: { color: '#FF69B4', formatter: (v: number) => v.toFixed(1) },
+      splitLine: { show: false },
+    },
+  ],
+  series: [
+    ...baseSeries.map(s => ({
       name: s.name,
       type: 'line',
       stack: 'Total',
       smooth: true,
-      lineStyle: { width: 0 },
-      showSymbol: false,
+      symbol: 'none',
+      lineStyle: { width: 1.5 },
+      itemStyle: { color: s.color[0] },
       areaStyle: {
         opacity: 0.8,
         color: {
@@ -108,11 +101,33 @@ const chartOptions = computed(() => {
           ],
         },
       },
-      emphasis: { focus: 'series' },
+      emphasis: { focus: 'series', blurScope: 'coordinateSystem' },
       data: s.data,
     })),
-  }
-})
+    {
+      name: 'Revenue',
+      type: 'line',
+      smooth: true,
+      yAxisIndex: 0,
+      symbol: 'none',
+      lineStyle: { width: 2.5, color: revenueLine.color },
+      itemStyle: { color: revenueLine.color },
+      emphasis: { focus: 'series', blurScope: 'coordinateSystem' },
+      data: revenueLine.data,
+    },
+    {
+      name: 'DSCR',
+      type: 'line',
+      smooth: true,
+      yAxisIndex: 1,
+      symbol: 'none',
+      lineStyle: { width: 2.5, color: dscrLine.color },
+      itemStyle: { color: dscrLine.color },
+      emphasis: { focus: 'series', blurScope: 'coordinateSystem' },
+      data: dscrLine.data,
+    },
+  ],
+}))
 </script>
 
 <template>
@@ -120,15 +135,14 @@ const chartOptions = computed(() => {
     outlined
     class="pa-0"
   >
-    <VCardTitle class="px-6 py-4 d-flex align-center justify-space-between">
-      Gradient Stacked Area Chart
+    <VCardTitle class="px-6 py-4">
+      Gradient Stacked Area (with Crosshair & Tooltip Sync)
     </VCardTitle>
-
     <VCardText class="px-6 py-4">
       <VChart
-        autoresize
         :option="chartOptions"
-        style="block-size: 500px;"
+        autoresize
+        style="block-size: 520px;"
       />
     </VCardText>
   </VCard>
@@ -137,6 +151,6 @@ const chartOptions = computed(() => {
 <style scoped>
 .v-card {
   border-radius: 12px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 5%);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 8%);
 }
 </style>
