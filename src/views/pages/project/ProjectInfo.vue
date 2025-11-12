@@ -619,13 +619,3 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
     :asset-type="selectedType || 'coal'"
   />
 </template>
-
-<style scoped>
-.vertical-bar {
-  display: inline-block;
-  border-radius: 2px;
-  background-color: rgba(var(--v-theme-success));
-  block-size: 16px;
-  inline-size: 3px;
-}
-</style>

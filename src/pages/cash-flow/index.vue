@@ -5,6 +5,7 @@ import CashFlowReport from '@/views/pages/cash-flow/CashFlowReport.vue'
 import CashFlowReportCard from '@/views/pages/cash-flow/CashFlowReportCard.vue'
 import ProjectList from '@/views/pages/cash-flow/ProjectList.vue'
 import TestChart from '@/views/pages/cash-flow/TestChart.vue'
+import EChart from '@/views/pages/cash-flow/EChart.vue'
 
 // ----------------------
 // 🔹 프로젝트 리스트 데이터
@@ -72,6 +73,10 @@ const selectedProject = ref(projects.value[0])
 
         <VCol cols="12">
           <CashFlowPlotly />
+
+          <VCol cols="12">
+            <EChart />
+          </VCol>
 
           <VCol cols="12">
             <TestChart />

@@ -57,3 +57,12 @@ body.drawer-open {
   background-color: rgb(var(--v-theme-surface));
   inset-block-start: 0;
 }
+
+/*  공통 vertical-bar 스타일 (모든 페이지에서 재사용 가능) */
+.vertical-bar {
+  display: inline-block;
+  border-radius: 2px;
+  background-color: rgba(var(--v-theme-success));
+  block-size: 16px;
+  inline-size: 3px;
+}
