@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import TabCreateScenario from '@/views/pages/scenario-analysis/TabCreateScenario.vue'
 import TabDefaultCheck from '@/views/pages/scenario-analysis/TabDefaultCheck.vue'
 import TabResult from '@/views/pages/scenario-analysis/TabResult.vue'
 
 const currentTab = ref('Create Scenario')
 const tabsData = ['Create Scenario', 'Result', 'Default Check']
+
+//  탭 변경 함수
+const handleChangeTab = (target: string) => {
+  currentTab.value = target
+}
 </script>
 
 <template>
@@ -19,20 +25,21 @@ const tabsData = ['Create Scenario', 'Result', 'Default Check']
       <VTab
         v-for="(tab, index) in tabsData"
         :key="index"
+        :value="tab"
         class="custom-tab"
       >
         {{ tab }}
       </VTab>
     </VTabs>
 
-    <!-- 🔹 Divider (보라색 언더라인과 정렬되도록 위로 이동) -->
+    <!-- 🔹 Divider -->
     <VDivider class="tab-divider" />
 
     <!-- 🔹 콘텐츠 영역 -->
     <VCardText class="pt-0">
       <VWindow v-model="currentTab">
         <VWindowItem value="Create Scenario">
-          <TabCreateScenario />
+          <TabCreateScenario @change-tab="handleChangeTab" />
         </VWindowItem>
 
         <VWindowItem value="Result">
@@ -48,17 +55,21 @@ const tabsData = ['Create Scenario', 'Result', 'Default Check']
 </template>
 
 <style scoped>
-/* ✅ 탭 바 스타일 */
 .custom-tab-bar {
   align-items: center !important;
   justify-content: center !important;
   background-color: transparent;
   border-block-end: none !important;
   min-block-size: 68px;
-  padding-inline: 10px !important; /* 🔹 좌우 여백 줄여서 앞으로 당김 */
+  padding-inline: 10px !important;
 }
 
-/* ✅ 탭 텍스트 정렬 */
+/*  활성 탭 강조 색상 */
+.v-tab.v-tab--selected {
+  color: rgb(var(--v-theme-primary)) !important;
+  font-weight: 600;
+}
+
 .custom-tab {
   display: flex;
   align-items: center;
@@ -72,28 +83,8 @@ const tabsData = ['Create Scenario', 'Result', 'Default Check']
   transition: color 0.25s ease;
 }
 
-/* ✅ 탭 내부 중앙 정렬 */
-.v-tab .v-btn__content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ✅ 활성 탭 강조 */
-.v-tab.v-tab--selected {
-  color: rgb(var(--v-theme-primary)) !important;
-  font-weight: 600;
-}
-
-/* ✅ Divider — 언더라인과 높이 일치 */
 .tab-divider {
   border-color: rgba(var(--v-border-color), 0.12);
   margin-block-start: -2px !important;
-}
-
-/* ✅ Slide 그룹 간격 줄이기 */
-.v-slide-group__content {
-  padding-inline: 10px !important; /* 🔹 좌우 간격 축소 */
-  transition: all 0.25s ease-in-out;
 }
 </style>
