@@ -128,19 +128,6 @@ const onViewResults = () => {
 <template>
   <!-- Scenario -->
   <div class="scenario-section mb-6">
-    <div
-      v-if="mdAndUp"
-      class="d-flex justify-end mb-3"
-    >
-      <VBtn
-        color="primary"
-        variant="flat"
-        @click="onViewResults"
-      >
-        View Results
-      </VBtn>
-    </div>
-
     <div class="d-flex align-center text-body-1 mb-3">
       <div class="vertical-bar me-2" />
       Scenario
@@ -213,7 +200,7 @@ const onViewResults = () => {
     </div>
   </div>
 
-  <!--  Selection Summary (Scenario Chips + Summary Card) -->
+  <!-- Summary -->
   <div
     v-if="showSummary && selectedSummary.length"
     class="mt-4"
@@ -228,7 +215,7 @@ const onViewResults = () => {
       <VChip
         v-if="baselineChecked"
         size="small"
-        color="primary"
+        color="secondary"
         variant="tonal"
       >
         Baseline
@@ -238,7 +225,7 @@ const onViewResults = () => {
         v-for="sc in selectedScenarios"
         :key="sc"
         size="small"
-        color="secondary"
+        color="success"
         variant="tonal"
       >
         {{ sc }}
@@ -257,11 +244,12 @@ const onViewResults = () => {
           class="summary-item"
         >
           <div class="summary-title">
-            {{ item.name }} <span class="asset-type">({{ item.type }})</span>
+            {{ item.name }}
+            <span class="asset-type">({{ item.type }})</span>
           </div>
 
           <div class="summary-risks">
-            <span class="label">Risks:</span>
+            <span class="label">Risk Factor</span>
 
             <template v-if="item.risks.length">
               <VChip
@@ -286,7 +274,7 @@ const onViewResults = () => {
     </VCard>
   </div>
 
-  <!-- Desktop Table -->
+  <!-- PC: Desktop Table + Bottom Inline Button -->
   <div
     v-if="mdAndUp"
     class="mt-6"
@@ -310,6 +298,7 @@ const onViewResults = () => {
           </th>
         </tr>
       </thead>
+
       <tbody>
         <tr
           v-for="project in projects"
@@ -323,19 +312,23 @@ const onViewResults = () => {
               @update:model-value="toggleProjectSelection(project.id)"
             />
           </td>
+
           <td>{{ project.name }}</td>
+
           <td>
             <IconBtn size="small">
               <VIcon icon="ri-edit-box-line" />
             </IconBtn>
           </td>
+
           <td class="text-capitalize">
             {{ project.type }}
           </td>
+
           <td>
             <div class="d-flex flex-wrap gap-4">
               <div
-                v-for="risk in getRiskFactors(project.type as AssetType)"
+                v-for="risk in getRiskFactors(project.type)"
                 :key="risk.code"
                 class="d-flex align-center"
               >
@@ -358,6 +351,16 @@ const onViewResults = () => {
         </tr>
       </tbody>
     </VTable>
+
+    <!-- ⭐ 마지막에 붙는 PC Result View 버튼 ⭐ -->
+    <div class="d-flex justify-end mt-4">
+      <VBtn
+        color="primary"
+        class="text-end py-0"
+      >
+        Result View
+      </VBtn>
+    </div>
   </div>
 
   <!-- Mobile Cards -->
@@ -376,6 +379,7 @@ const onViewResults = () => {
           <div class="text-subtitle-1 font-weight-medium">
             {{ project.name }}
           </div>
+
           <VCheckbox
             :model-value="isProjectSelected(project.id)"
             hide-details
@@ -401,6 +405,7 @@ const onViewResults = () => {
               hide-details
               density="compact"
             />
+
             <span
               class="text-body-2"
               :class="{ 'text-disabled': !isProjectSelected(project.id) }"
@@ -412,6 +417,7 @@ const onViewResults = () => {
       </VCard>
     </div>
 
+    <!-- Mobile: bottom fixed -->
     <div class="mobile-fixed-btn">
       <VBtn
         block
@@ -427,7 +433,7 @@ const onViewResults = () => {
 </template>
 
 <style scoped lang="scss">
-/* ⭐ Summary Card 예쁜 버전 */
+/* Summary */
 .summary-card {
   padding: 20px;
   border: 1px solid rgba(var(--v-border-color), 0.15);
@@ -459,8 +465,7 @@ const onViewResults = () => {
   margin-inline-end: 6px;
 }
 
-/* ---------- Existing ---------- */
-
+/* Mobile fixed */
 .mobile-fixed-btn {
   position: fixed;
   z-index: 999;
@@ -472,7 +477,8 @@ const onViewResults = () => {
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 8%);
   inset-block-end: 0;
   inset-inline: 0;
-  padding-block: 10px 16px;
+  padding-block: 10px;
+  padding-inline: 16px;
 }
 
 .mobile-fixed-btn .v-btn {
@@ -486,11 +492,7 @@ const onViewResults = () => {
   }
 }
 
-.baseline-checkbox .v-label {
-  color: rgb(var(--v-theme-primary)) !important;
-  font-weight: 600;
-}
-
+/* Table */
 .project-table th,
 .project-table td {
   block-size: 50px !important;
@@ -500,6 +502,4 @@ const onViewResults = () => {
 .project-table th {
   text-align: center !important;
 }
-
-/* ❗ 여기에서 vertical-bar 스타일 완전히 제거됨 */
 </style>
