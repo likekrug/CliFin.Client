@@ -38,7 +38,7 @@ const allSeriesData = {
 }
 
 /* ===================================================
-   📌 원본 baseSeries 구조 그대로 유지
+    원본 baseSeries 구조 그대로 유지
 =================================================== */
 const baseSeries = [
   { name: 'Operation Expense', color: COLOR.operation, data: allSeriesData.operation_expense },
@@ -179,6 +179,14 @@ const chartOptions = computed(() => ({
     },
   ],
 }))
+
+const isReady = ref(false)
+
+onMounted(() => {
+  requestAnimationFrame(() => {
+    isReady.value = true
+  })
+})
 </script>
 
 <template>
@@ -195,6 +203,7 @@ const chartOptions = computed(() => ({
 
     <VCardText>
       <VChart
+        v-if="isReady"
         :option="chartOptions"
         autoresize
         style="block-size: 520px; inline-size: 100%;"

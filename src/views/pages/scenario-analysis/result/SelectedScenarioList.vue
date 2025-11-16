@@ -10,13 +10,36 @@ interface SummaryItem {
 const props = defineProps<{
   items: SummaryItem[]
   scenarios: string[]
+  mode: 'single' | 'multi'
   activeId?: number | null
+  activeIds?: number[]
 }>()
 
-const emit = defineEmits(['update:activeId'])
+const emit = defineEmits([
+  'update:activeId',
+  'update:activeIds',
+])
 
-const selectItem = (item: SummaryItem) => {
-  emit('update:activeId', item.id)
+/* ===================================================
+  🔹 Single 선택
+=================================================== */
+const selectSingle = (item: SummaryItem) => {
+  if (props.activeId !== item.id)
+    emit('update:activeId', item.id)
+}
+
+/* ===================================================
+  🔹 Multi 선택 (toggle)
+=================================================== */
+const toggleMulti = (item: SummaryItem) => {
+  const list = props.activeIds ? [...props.activeIds] : []
+
+  const exists = list.includes(item.id)
+
+  emit(
+    'update:activeIds',
+    exists ? list.filter(x => x !== item.id) : [...list, item.id],
+  )
 }
 </script>
 
@@ -34,15 +57,17 @@ const selectItem = (item: SummaryItem) => {
         v-for="sc in scenarios"
         :key="sc"
         size="small"
-        :color="sc === 'Baseline'
-          ? 'secondary'
-          : sc === 'SSP126'
-            ? 'info'
-            : sc === 'SSP585'
-              ? 'error'
-              : sc === 'SSP170'
-                ? 'warning'
-                : 'success'"
+        :color="
+          sc === 'Baseline'
+            ? 'secondary'
+            : sc === 'SSP126'
+              ? 'info'
+              : sc === 'SSP585'
+                ? 'error'
+                : sc === 'SSP170'
+                  ? 'warning'
+                  : 'primary'
+        "
         variant="tonal"
       >
         {{ sc }}
@@ -54,8 +79,16 @@ const selectItem = (item: SummaryItem) => {
       v-for="item in items"
       :key="item.id"
       class="project-card pa-3 mb-4"
-      :class="{ active: props.activeId === item.id }"
-      @click="selectItem(item)"
+      :class="{
+        active:
+          (props.mode === 'single' && props.activeId === item.id)
+          || (props.mode === 'multi' && props.activeIds?.includes(item.id)),
+      }"
+      @click="
+        props.mode === 'single'
+          ? selectSingle(item)
+          : toggleMulti(item)
+      "
     >
       <div
         class="summary-title text-truncate"
@@ -96,7 +129,6 @@ const selectItem = (item: SummaryItem) => {
   inline-size: 100%;
 }
 
-/* 기본 카드 */
 .project-card {
   border: 1px solid rgba(var(--v-border-color), 0.2);
   border-radius: 10px;
@@ -110,7 +142,7 @@ const selectItem = (item: SummaryItem) => {
   transform: translateY(-2px);
 }
 
-/* ✔ 선택된 스타일 (ProjectList와 동일) */
+/* 선택된 상태 */
 .project-card.active {
   border-color: rgb(var(--v-theme-primary));
   box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.3);

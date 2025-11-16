@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import SelectedScenarioList from './result/SelectedScenarioList.vue'
 import ResultReport from './result/ResultReport.vue'
-
-import ResultScenarioCharts from './result//ResultScenarioCharts.vue'
-
-// import ResultTables from '@/components/result/ResultTables.vue'
+import ResultReportColor from './result/ResultReportColor.vue'
+import ResultReportColor2 from './result/ResultReportColor2.vue'
+import ResultScenarioCharts from './result/ResultScenarioCharts.vue'
+import Riskbreakdown from './result/Riskbreakdown.vue'
+import SelectedScenarioList from './result/SelectedScenarioList.vue'
 
 /* -----------------------------------
   Types
@@ -22,11 +22,12 @@ interface SummaryItem {
 ----------------------------------- */
 const selectedScenarios = ['Baseline', 'SSP126', 'SSP585', 'SSP170']
 
-// const selectedScenarios = ['Baseline', 'SSP126', 'SSP585']
-
-// const selectedScenarios = ['Baseline', 'SSP126']
-
 const activeProjectId = ref(1)
+
+/* -----------------------------------
+  ⭐ Tabs (Summary / Breakdown)
+----------------------------------- */
+const activeTab = ref('summary')
 
 /* -----------------------------------
   ⭐ Test Data: Selected Projects Summary
@@ -48,6 +49,9 @@ const selectedSummary: SummaryItem[] = [
   },
 ]
 
+/* -----------------------------------
+  ⭐ Scenario Data
+----------------------------------- */
 const scenarioData = {
   Baseline: [
     { label: 'Debt amount', value: '$12,000,000' },
@@ -61,7 +65,6 @@ const scenarioData = {
     { label: 'Default year', value: '2031' },
     { label: 'DSRA trigger', value: 'Y' },
   ],
-
   SSP126: [
     { label: 'Debt amount', value: '$11,800,000' },
     { label: 'Tenor / Margin', value: '10 Yr / 3.6%' },
@@ -74,7 +77,6 @@ const scenarioData = {
     { label: 'Default year', value: '2030' },
     { label: 'DSRA trigger', value: 'Y' },
   ],
-
   SSP585: [
     { label: 'Debt amount', value: '$11,200,000' },
     { label: 'Tenor / Margin', value: '10 Yr / 4.0%' },
@@ -87,7 +89,6 @@ const scenarioData = {
     { label: 'Default year', value: '2029' },
     { label: 'DSRA trigger', value: 'N' },
   ],
-
   SSP170: [
     { label: 'Debt amount', value: '$10,900,000' },
     { label: 'Tenor / Margin', value: '10 Yr / 4.3%' },
@@ -112,6 +113,7 @@ const scenarioData = {
     >
       <SelectedScenarioList
         v-model:active-id="activeProjectId"
+        mode="single"
         :items="selectedSummary"
         :scenarios="selectedScenarios"
       />
@@ -122,33 +124,66 @@ const scenarioData = {
       cols="12"
       md="10"
     >
-      <VRow>
-        <!-- 추후 Overview Cards -->
+      <!-- Tabs -->
+      <VTabs
+        v-model="activeTab"
+        class="mb-4"
+      >
+        <VTab value="summary">
+          Summary
+        </VTab>
+        <VTab value="breakdown">
+          Risk Breakdown
+        </VTab>
+      </VTabs>
 
-        <VCol cols="12">
-          <ResultReport
-            :selected-scenarios="selectedScenarios"
-            :scenario-data="scenarioData"
-          />
-        </VCol>
+      <VWindow v-model="activeTab">
+        <!-- ======================= -->
+        <!-- ⭐ SUMMARY TAB 화면      -->
+        <!-- ======================= -->
+        <VWindowItem value="summary">
+          <VRow>
+            <VCol cols="12">
+              <ResultReport
+                v-if="activeTab === 'summary'"
+                :selected-scenarios="selectedScenarios"
+                :scenario-data="scenarioData"
+              />
+            </VCol>
 
-        <VCol cols="12">
-          <ResultScenarioCharts :selected-scenarios="selectedScenarios" />
-        </VCol>
-        <!--
-          <VCol cols="12">
-          <ResultScenarioCharts />
-          </VCol>
+            <VCol cols="12">
+              <ResultReportColor
+                v-if="activeTab === 'summary'"
+                :selected-scenarios="selectedScenarios"
+                :scenario-data="scenarioData"
+              />
+            </VCol>
 
-          <VCol cols="12">
-          <VDivider class="my-6" />
-          </VCol>
+            <VCol cols="12">
+              <ResultReportColor2
+                v-if="activeTab === 'summary'"
+                :selected-scenarios="selectedScenarios"
+                :scenario-data="scenarioData"
+              />
+            </VCol>
 
-          <VCol cols="12">
-          <ResultTables />
-          </VCol>
-        -->
-      </VRow>
+            <!-- ⭐ 그래프도 Summary에 포함 -->
+            <VCol cols="12">
+              <ResultScenarioCharts
+                v-if="activeTab === 'summary'"
+                :selected-scenarios="selectedScenarios"
+              />
+            </VCol>
+          </VRow>
+        </VWindowItem>
+
+        <!-- ======================= -->
+        <!-- ⭐ BREAKDOWN TAB 화면 -->
+        <!-- ======================= -->
+        <VWindowItem value="breakdown">
+          <Riskbreakdown :selected-scenarios="selectedScenarios" />
+        </VWindowItem>
+      </VWindow>
     </VCol>
   </VRow>
 </template>
