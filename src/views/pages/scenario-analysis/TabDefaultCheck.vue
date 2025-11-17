@@ -148,10 +148,10 @@ const scenarioData = {
 const handleTabChange = (v: unknown) => {
   const tab = v as string
 
-  if (tab === 'summary')
+  if (tab === 'single')
     activeProjectId.value = activeProjectIds.value[0] ?? null
 
-  if (tab === 'breakdown')
+  if (tab === 'multi')
     activeProjectIds.value = selectedSummary.map(p => p.id)
 }
 </script>
@@ -164,7 +164,7 @@ const handleTabChange = (v: unknown) => {
       md="2"
     >
       <SelectedScenarioList
-        v-if="activeTab === 'summary'"
+        v-if="activeTab === 'single'"
         v-model:active-id="activeProjectId"
         mode="single"
         :items="selectedSummary"
@@ -190,17 +190,17 @@ const handleTabChange = (v: unknown) => {
         class="mb-4"
         @update:model-value="handleTabChange"
       >
-        <VTab value="summary">
-          Single
+        <VTab value="single">
+          Single Project
         </VTab>
-        <VTab value="breakdown">
-          Multi
+        <VTab value="multi">
+          Multi Project
         </VTab>
       </VTabs>
 
       <VWindow v-model="activeTab">
         <!-- SUMMARY -->
-        <VWindowItem value="summary">
+        <VWindowItem value="single">
           <VRow>
             <VCol
               cols="12"
@@ -226,7 +226,7 @@ const handleTabChange = (v: unknown) => {
         </VWindowItem>
 
         <!-- BREAKDOWN -->
-        <VWindowItem value="breakdown">
+        <VWindowItem value="multi">
           <div class="pa-6 text-body-1">
             breakdown
           </div>

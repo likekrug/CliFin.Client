@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import ResultReport from './result/ResultReport.vue'
-import ResultReportColor from './result/ResultReportColor.vue'
 import ResultReportColor2 from './result/ResultReportColor2.vue'
 import ResultScenarioCharts from './result/ResultScenarioCharts.vue'
 import Riskbreakdown from './result/Riskbreakdown.vue'
@@ -143,22 +141,6 @@ const scenarioData = {
         <!-- ======================= -->
         <VWindowItem value="summary">
           <VRow>
-            <VCol cols="12">
-              <ResultReport
-                v-if="activeTab === 'summary'"
-                :selected-scenarios="selectedScenarios"
-                :scenario-data="scenarioData"
-              />
-            </VCol>
-
-            <VCol cols="12">
-              <ResultReportColor
-                v-if="activeTab === 'summary'"
-                :selected-scenarios="selectedScenarios"
-                :scenario-data="scenarioData"
-              />
-            </VCol>
-
             <VCol cols="12">
               <ResultReportColor2
                 v-if="activeTab === 'summary'"

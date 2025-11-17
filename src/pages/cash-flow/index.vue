@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import CashFlowPlotly from '@/views/pages/cash-flow/CashFlowPlotly.vue'
 import CashFlowReportCard from '@/views/pages/cash-flow/CashFlowReportCard.vue'
 import EChart from '@/views/pages/cash-flow/EChart.vue'
 import ProjectList from '@/views/pages/cash-flow/ProjectList.vue'
-import TestChart from '@/views/pages/cash-flow/TestChart.vue'
 
 // ----------------------
 // 🔹 프로젝트 리스트 데이터
@@ -72,31 +70,33 @@ const selectedProject = ref(projects.value[0])
           </VCol>
         -->
 
+        <!-- <VCol cols="12"> -->
+        <!-- <CashFlowPlotly /> -->
+
         <VCol cols="12">
-          <CashFlowPlotly />
+          <EChart />
+        </VCol>
 
+        <!--
           <VCol cols="12">
-            <EChart />
+          <TestChart />
           </VCol>
+        -->
 
+        <!-- 하단: 제미나이 -->
+        <!--
           <VCol cols="12">
-            <TestChart />
+          <CashFlowChartJM />
           </VCol>
+        -->
 
-          <!-- 하단: 제미나이 -->
-          <!--
-            <VCol cols="12">
-            <CashFlowChartJM />
-            </VCol>
-          -->
-
-          <!-- 하단: 그래프2 chart js -->
-          <!--
-            <VCol cols="12">
-            <CashFlowChartJS />
-            </VCol>
-          -->
-        </vcol>
+        <!-- 하단: 그래프2 chart js -->
+        <!--
+          <VCol cols="12">
+          <CashFlowChartJS />
+          </VCol>
+        -->
+        <!--  -->
       </VRow>
     </VCol>
   </VRow>
