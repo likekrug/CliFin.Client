@@ -34,137 +34,132 @@ const toggleActive = (key: 'de' | 'tenor' | 'dsra') => {
     :class="!props.selected ? 'opacity-50 pointer-events-none' : ''"
   >
     <!-- ▒▒▒▒▒ PC UI ▒▒▒▒▒ -->
-    <div v-if="mdAndUp">
-      <!-- Debt -->
-      <div class="d-flex align-center mb-4 gap-4">
-        <VCheckbox
-          :model-value="props.active.de"
-          hide-details
-          density="compact"
-          @update:model-value="toggleActive('de')"
-        />
-
-        <span class="text-subtitle-1 font-weight-medium">Debt to Equity</span>
+    <div
+      v-if="mdAndUp"
+      class="pc-row d-flex gap-8"
+    >
+      <!-- Debt to Equity -->
+      <div class="flex-1">
+        <div class="d-flex align-center mb-2 gap-2">
+          <VCheckbox
+            :model-value="props.active.de"
+            hide-details
+            density="compact"
+            @update:model-value="toggleActive('de')"
+          />
+          <span class="text-subtitle-1 font-weight-medium">Debt to Equity</span>
+        </div>
 
         <div class="d-flex align-center gap-2">
-          <label class="text-caption">Before</label>
           <VTextField
             :model-value="props.before.de"
             disabled
+            label="Before"
             density="compact"
             variant="outlined"
             suffix="%"
             class="before-field"
-            style="inline-size: 110px;"
           />
-        </div>
 
-        <VIcon
-          color="primary"
-          size="20"
-        >
-          ri-arrow-right-line
-        </VIcon>
+          <VIcon
+            color="primary"
+            size="20"
+          >
+            ri-arrow-right-line
+          </VIcon>
 
-        <div class="d-flex align-center gap-2">
-          <label class="text-caption">Modify</label>
           <VTextField
             v-model="modify.de"
             :disabled="!props.active.de"
+            label="Modify"
             density="compact"
             variant="outlined"
             suffix="%"
-            style="inline-size: 110px;"
           />
         </div>
       </div>
 
       <!-- Tenor -->
-      <div class="d-flex align-center mb-4 gap-4">
-        <VCheckbox
-          :model-value="props.active.tenor"
-          hide-details
-          density="compact"
-          @update:model-value="toggleActive('tenor')"
-        />
-
-        <span class="text-subtitle-1 font-weight-medium">Tenor</span>
+      <div class="flex-1">
+        <div class="d-flex align-center mb-2 gap-2">
+          <VCheckbox
+            :model-value="props.active.tenor"
+            hide-details
+            density="compact"
+            @update:model-value="toggleActive('tenor')"
+          />
+          <span class="text-subtitle-1 font-weight-medium">Tenor</span>
+        </div>
 
         <div class="d-flex align-center gap-2">
-          <label class="text-caption">Before</label>
           <VTextField
             :model-value="props.before.tenor"
             disabled
+            label="Before"
             density="compact"
             variant="outlined"
             suffix="Year"
-            class="before-field"
-            style="inline-size: 110px;"
           />
-        </div>
 
-        <VIcon
-          color="primary"
-          size="20"
-        >
-          ri-arrow-right-line
-        </VIcon>
+          <VIcon
+            color="primary"
+            size="20"
+          >
+            ri-arrow-right-line
+          </VIcon>
 
-        <div class="d-flex align-center gap-2">
-          <label class="text-caption">Modify</label>
           <VTextField
             v-model="modify.tenor"
             :disabled="!props.active.tenor"
+            label="Modify"
             density="compact"
             variant="outlined"
             suffix="Year"
-            style="inline-size: 110px;"
           />
         </div>
       </div>
 
       <!-- DSRA -->
-      <div class="d-flex align-center gap-4">
-        <VCheckbox
-          :model-value="props.active.dsra"
-          hide-details
-          density="compact"
-          @update:model-value="toggleActive('dsra')"
-        />
-
-        <span class="text-subtitle-1 font-weight-medium">DSRA</span>
+      <div class="flex-1">
+        <div class="d-flex align-center mb-2 gap-2">
+          <VCheckbox
+            :model-value="props.active.dsra"
+            hide-details
+            density="compact"
+            @update:model-value="toggleActive('dsra')"
+          />
+          <span class="text-subtitle-1 font-weight-medium">DSRA</span>
+        </div>
 
         <div class="d-flex align-center gap-2">
-          <label class="text-caption">Before</label>
           <VTextField
             :model-value="props.before.dsra"
             disabled
+            label="Before"
             density="compact"
             variant="outlined"
             suffix="Month"
             class="before-field"
-            style="inline-size: 110px;"
           />
-        </div>
 
-        <VIcon
-          color="primary"
-          size="20"
-        >
-          ri-arrow-right-line
-        </VIcon>
+          <VIcon
+            color="primary"
+            size="20"
+          >
+            ri-arrow-right-line
+          </VIcon>
 
-        <div class="d-flex align-center gap-2">
-          <label class="text-caption">Modify</label>
           <VTextField
             v-model="modify.dsra"
             :disabled="!props.active.dsra"
+            label="Modify"
             density="compact"
             variant="outlined"
             suffix="Month"
-            style="inline-size: 110px;"
           />
         </div>
+
+        <!-- DSCR -->
       </div>
     </div>
 
@@ -279,14 +274,15 @@ const toggleActive = (key: 'de' | 'tenor' | 'dsra') => {
 
         <div class="d-flex gap-3">
           <div class="flex-grow-1">
-            <label class="text-caption">Before</label>
             <VTextField
               :model-value="props.before.dsra"
               disabled
               density="compact"
+              label="Before"
               variant="outlined"
               suffix="Month"
               class="before-field"
+              persistent-hint
             />
           </div>
 
@@ -299,10 +295,10 @@ const toggleActive = (key: 'de' | 'tenor' | 'dsra') => {
           </VIcon>
 
           <div class="flex-grow-1">
-            <label class="text-caption">Modify</label>
             <VTextField
               v-model="modify.dsra"
               :disabled="!props.active.dsra"
+              label="Modify"
               density="compact"
               variant="outlined"
               suffix="Month"
@@ -332,7 +328,7 @@ const toggleActive = (key: 'de' | 'tenor' | 'dsra') => {
   color: rgba(0, 0, 0, 85%) !important; /* 더 진하게 */
 }
 
-.before-field :deep(.v-field--disabled) {
+/* .before-field :deep(.v-field--disabled) {
   opacity: 1 !important;
-}
+} */
 </style>
