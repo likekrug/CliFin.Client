@@ -61,20 +61,17 @@ const chartOptions = computed(() => ({
     itemWidth: 10,
     itemHeight: 10,
     itemGap: 20,
+
+    //  범례 색상 자동 적용
+    formatter: (name: string) => `${name}`,
     textStyle: {
       fontSize: 12,
       color: '#444',
-    },
-
-    //  범례 색상 자동 적용
-    formatter: name => ` ${name}`,
-    textStyle: {
       rich: {
         color: {
-          fontSize: 14,
-          fontWeight: 900,
+          fontSize: 12,
           width: 12,
-          color: legendColors,
+          fontWeight: 700,
         },
       },
     },

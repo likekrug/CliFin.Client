@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import TabSimulation from '@/views/pages/investment-decision/TabSimulation.vue'
+import TabInvestment from '@/views/pages/investment-decision/TabInvestment.vue'
 import TabResult from '@/views/pages/scenario-analysis/TabResult.vue'
 
 const currentTab = ref('Investment Decision Simulation')
@@ -36,7 +36,7 @@ const handleChangeTab = (target: string) => {
       <VWindow v-model="currentTab">
         <VWindowItem value="Investment Decision Simulation">
           <!-- ⚡ selected prop 전달 (필수) -->
-          <TabSimulation @change-tab="handleChangeTab" />
+          <TabInvestment @change-tab="handleChangeTab" />
         </VWindowItem>
 
         <VWindowItem value="Result">
