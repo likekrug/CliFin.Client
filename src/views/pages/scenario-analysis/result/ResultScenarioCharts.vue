@@ -22,8 +22,8 @@ const props = defineProps<{
 <style scoped lang="scss">
 /* 전체 wrapper — 스크롤바 */
 .charts-wrapper {
+  overflow: auto hidden;          /*  가로 스크롤 활성 */
   -webkit-overflow-scrolling: touch;
-  overflow: auto hidden;          /* ⭐ 가로 스크롤 활성 */
   padding-block: 8px;
   padding-inline: 4px;
   scroll-behavior: smooth;
@@ -36,13 +36,12 @@ const props = defineProps<{
   flex-direction: row;
   padding: 8px;
   gap: 24px;
-  inline-size: max-content;  /* ⭐ 내용 크기만큼 row width 생성 → 스크롤 OK */
+  inline-size: max-content;  /*  내용 크기만큼 row width 생성 → 스크롤 OK */
 }
 
-/* 데스크탑에서 스크롤을 없애고 싶다면 이 옵션 제거해야 함!! */
 @media (min-width: 1400px) {
   .charts-wrapper {
-    overflow-x: auto;       /* ⭐ 데스크탑에도 스크롤 유지 */
+    overflow-x: auto;
   }
 }
 </style>

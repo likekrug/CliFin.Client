@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import TabInvestment from '@/views/pages/investment-decision/TabInvestment.vue'
-import TabResult from '@/views/pages/scenario-analysis/TabResult.vue'
+import TabSimulationResult from '@/views/pages/investment-decision/TabSimulationResult.vue'
 
 const currentTab = ref('Investment Decision Simulation')
 const tabsData = ['Investment Decision Simulation', 'Result']
@@ -40,7 +40,7 @@ const handleChangeTab = (target: string) => {
         </VWindowItem>
 
         <VWindowItem value="Result">
-          <TabResult />
+          <TabSimulationResult />
         </VWindowItem>
       </VWindow>
     </VCardText>

@@ -161,7 +161,7 @@ const onViewResults = () => {
   <div class="mb-3">
     <div class="d-flex align-center text-body-1 mb-2">
       <div class="vertical-bar me-2" />
-      Your Projects
+      Project List
     </div>
 
     <div

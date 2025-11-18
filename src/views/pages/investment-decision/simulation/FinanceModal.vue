@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 
 const props = defineProps<{
   modelValue: boolean
@@ -7,6 +8,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['update:modelValue', 'save'])
+
+const { smAndDown } = useDisplay()
 
 /* -------------------------------
   Dialog Visible (v-model)
@@ -82,16 +85,30 @@ const onSave = () => {
 <template>
   <VDialog
     :model-value="localVisible"
+    :fullscreen="smAndDown"
+    :scrim="smAndDown ? false : true"
+    transition="dialog-bottom-transition"
     @update:model-value="val => (localVisible = val)"
   >
     <VCard
-      max-width="700"
-      class="mx-auto pa-6"
+      :min-width="smAndDown ? undefined : 500"
+      class="mx-auto"
+      :class="smAndDown ? 'rounded-0 pa-4' : 'pa-6'"
     >
-      <div class="text-h5 font-weight-semibold mb-4">
-        Modify financial conditions
+      <div class="d-flex justify-space-between align-center mb-1">
+        <div class="text-h5 font-weight-semibold">
+          Modify financial conditions
+        </div>
+
+        <VBtn
+          icon="ri-close-line"
+          variant="text"
+          density="comfortable"
+          @click="localVisible = false"
+        />
       </div>
 
+      <VDivider class="my-2" />
       <div class="text-h6 mb-6">
         {{ project?.name }}
       </div>

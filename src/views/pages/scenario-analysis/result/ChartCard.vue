@@ -216,8 +216,8 @@ onMounted(() => {
 .chart-card {
   overflow: hidden;
   border-radius: 14px;
-  inline-size: 480px;
-  min-block-size: 600px;
+  inline-size: 550px;
+  min-block-size: 620px;
 }
 
 .chart-title {

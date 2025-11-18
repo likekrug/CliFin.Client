@@ -48,7 +48,7 @@ const toggleMulti = (item: SummaryItem) => {
     <!-- 제목 -->
     <div class="text-body-1 mb-3 d-flex align-center">
       <div class="vertical-bar me-2" />
-      Your Scenario
+      Selected Scenarios
     </div>
 
     <!-- Scenario Chips -->

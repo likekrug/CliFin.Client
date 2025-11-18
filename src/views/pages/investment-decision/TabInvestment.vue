@@ -140,6 +140,10 @@ const onCheckChanged = (p: Project, val: boolean | null) => {
 </script>
 
 <template>
+  <div class="d-flex align-center text-body-1 mb-4">
+    <div class="vertical-bar me-2" />
+    Select Your Project and Set financial conditions.
+  </div>
   <VRow
     dense
     align="start"
@@ -149,6 +153,7 @@ const onCheckChanged = (p: Project, val: boolean | null) => {
       :key="p.id"
       cols="12"
       sm="4"
+      y
       md="2"
     >
       <VCard
