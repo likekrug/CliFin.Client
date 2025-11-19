@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import ResultChart from './result/ResultChart.vue'
-import ResultReport from './result/ResultReport.vue'
-
-// import ResultScenarioCharts from './result/ResultScenarioCharts.vue'
+import ProjectList from '@/views/pages/cash-flow/ProjectList.vue'
+import ResultReportColor2 from '@/views/pages/scenario-analysis/result/ResultReportColor2.vue'
 
 /* -----------------------------------
   Types
@@ -37,7 +36,7 @@ const selectedSummary: SummaryItem[] = [
   ⭐ Scenario Data
 ----------------------------------- */
 const selectedProjetData = {
-  before: [
+  Project: [
     { label: 'Debt amount', value: '$12,000,000' },
     { label: 'Tenor / Margin', value: '10 Yr / 3.5%' },
     { label: 'EOD threshold / DSRA', value: '1.20x / 6 months (Y)' },
@@ -49,7 +48,7 @@ const selectedProjetData = {
     { label: 'Default year', value: '2031' },
     { label: 'DSRA trigger', value: 'Y' },
   ],
-  after: [
+  Simulation: [
     { label: 'Debt amount', value: '$11,800,000' },
     { label: 'Tenor / Margin', value: '10 Yr / 3.6%' },
     { label: 'EOD threshold / DSRA', value: '1.18x / 6 months (Y)' },
@@ -65,7 +64,7 @@ const selectedProjetData = {
 }
 
 const scenarioData = {
-  before: [
+  Project: [
     { label: 'Debt amount', value: '$12,000,000' },
     { label: 'Tenor / Margin', value: '10 Yr / 3.5%' },
     { label: 'EOD threshold / DSRA', value: '1.20x / 6 months (Y)' },
@@ -80,7 +79,7 @@ const scenarioData = {
     { label: 'DSRA trigger', value: 'Y' },
   ],
 
-  after: [
+  Simulation: [
     { label: 'Debt amount', value: '$11,800,000' },
     { label: 'Tenor / Margin', value: '10 Yr / 3.6%' },
     { label: 'EOD threshold / DSRA', value: '1.18x / 6 months (Y)' },
@@ -95,6 +94,27 @@ const scenarioData = {
     { label: 'DSRA trigger', value: 'Y' },
   ],
 }
+
+// ----------------------
+// 🔹 프로젝트 리스트 데이터
+// ----------------------
+const projects = ref([
+  {
+    id: 1,
+    name: 'Coal Alpha',
+    type: 'Coal',
+    location: '53.339688, -6.236688',
+  },
+  {
+    id: 2,
+    name: 'Solar Bravo',
+    type: 'Solar',
+    location: 'Latitude, Longitude',
+  },
+
+])
+
+const selectedProject = ref(projects.value[0])
 </script>
 
 <template>
@@ -103,14 +123,21 @@ const scenarioData = {
       cols="12"
       md="2"
     >
-      Project List
+      <ProjectList
+        v-model:selected-project="selectedProject"
+        :projects="projects"
+      />
     </VCol>
     <!-- RIGHT: Result Panel -->
     <VCol
       cols="12"
       md="10"
     >
-      <ResultReport :scenario-data="selectedProjetData" />
+      <ResultReportColor2
+        mode="compare"
+        :selected-scenarios="['Project', 'Simulation']"
+        :scenario-data="selectedProjetData"
+      />
       <ResultChart :scenario-data="scenarioData" />
     </VCol>
   </VRow>

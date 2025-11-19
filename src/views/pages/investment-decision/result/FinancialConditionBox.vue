@@ -16,42 +16,79 @@ const props = defineProps<{
 
 <template>
   <VCard
-    class="finance-box pa-4"
     elevation="0"
+    class="projection-wrapper mt-4"
+    outline
   >
-    <!-- Title -->
-    <div class="text-h6 font-weight-semibold mb-3">
-      Financial Conditions ({{ title }})
-    </div>
+    <VCardTitle class="projection-title px-6 py-4">
+      {{ title }}
+    </VCardTitle>
 
-    <!-- List -->
-    <ul class="fin-list">
-      <li>
-        <strong>Debt to Equity Ratio :</strong>
-        {{ props.data.de }}
-      </li>
+    <VDivider class="mb-3" />
 
-      <li>
-        <strong>Tenor :</strong>
-        {{ props.data.tenor }}
-      </li>
+    <!-- 카드 내부 여백 시작 -->
+    <VCardText class="px-6 pt-2 pb-0">
+      <div class="finance-bg pa-4 mb-4">
+        <div class="text-h6 font-weight-semibold mb-3">
+          Financial Conditions
+        </div>
 
-      <li>
-        <strong>DSRA :</strong>
-        {{ props.data.dsra }}
-      </li>
-    </ul>
+        <ul class="fin-list">
+          <li>
+            <strong>Debt to Equity Ratio :</strong>
+            {{ props.data.de }}
+          </li>
+
+          <li>
+            <strong>Tenor :</strong>
+            {{ props.data.tenor }}
+          </li>
+
+          <li>
+            <strong>DSRA :</strong>
+            {{ props.data.dsra }}
+          </li>
+        </ul>
+      </div>
+    </VCardText>
+    <!-- 카드 내부 여백 끝 -->
 
     <!-- Chart -->
-    <ChartCard :scenario="props.mode" />
+    <VCardText class="d-flex justify-center">
+      <ChartCard :scenario="props.mode" />
+    </VCardText>
   </VCard>
 </template>
 
 <style scoped lang="scss">
+/* --------------------------- */
+
+/*   카드 전체 wrapper        */
+
+/* --------------------------- */
+.projection-wrapper {
+  border: 1px solid rgba(var(--v-border-color), 0.2) !important;
+  border-radius: 10px !important;
+  background-color: rgb(var(--v-theme-surface)) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 10%) !important;
+}
+
 .finance-box {
   border: 1px solid rgba(var(--v-border-color), 0.2);
   border-radius: 12px;
   background: rgba(var(--v-theme-secondary), 0.08);
+}
+
+.finance-bg {
+  border-radius: 12px;
+  background: rgba(var(--v-theme-secondary), 0.08);
+}
+
+.projection-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.15rem;
+  font-weight: 600;
 }
 
 .fin-list {

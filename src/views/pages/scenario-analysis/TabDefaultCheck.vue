@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import MultiMap from './default-check/MultiMap.vue'
 import SingleChart from './default-check/SingleChart.vue'
 import SingleReport from './default-check/SingleReport.vue'
 import SelectedScenarioList from './result/SelectedScenarioList.vue'
@@ -227,10 +228,13 @@ const handleTabChange = (v: unknown) => {
 
         <!-- BREAKDOWN -->
         <VWindowItem value="multi">
-          <div class="pa-6 text-body-1">
-            breakdown
-          </div>
-        </VWindowItem>
+          <VRow>
+            <VCol cols="12">
+              <MultiMap />
+              WindowItem>
+            </vcol>
+          </vrow>
+        </vwindowitem>
       </VWindow>
     </VCol>
   </VRow>

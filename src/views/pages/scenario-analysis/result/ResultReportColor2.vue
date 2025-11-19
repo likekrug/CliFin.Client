@@ -1,66 +1,97 @@
 <script setup lang="ts">
-interface ScenarioMetric {
+interface MetricItem {
   label: string
   value: string
 }
 
-interface ScenarioData {
-  [scenario: string]: ScenarioMetric[]
+interface ScenarioMap {
+  [key: string]: MetricItem[]
 }
 
-const props = defineProps<{
-  selectedScenarios: string[]
-  scenarioData: ScenarioData
-}>()
+const props = defineProps({
+  mode: {
+    type: String,
+    default: 'scenario', // ⭐ 기본값 지정
+  },
+  selectedScenarios: {
+    type: Array as () => string[],
+    required: true,
+  },
+  scenarioData: {
+    type: Object as () => ScenarioMap,
+    required: true,
+  },
+})
 
-/* 첫 번째 시나리오의 Metric 목록 불러오기 */
-const firstScenario = props.selectedScenarios[0]
-const metricList = props.scenarioData[firstScenario] || []
-
-/* 섹션 mapping */
+/* ===============================
+   Section Mapping
+================================ */
 const sectionMap: Record<string, string> = {
+  // Capital Structure
   'Debt amount': 'Capital Structure',
   'Tenor / Margin': 'Capital Structure',
   'EOD threshold / DSRA': 'Capital Structure',
 
+  // Valuation Summary
   'Equity IRR': 'Valuation Summary',
   'Equity NPV': 'Valuation Summary',
   'Payback period equity': 'Valuation Summary',
 
+  // Investment Summary
   'Min DSCR': 'Investment Summary',
   'LLCR': 'Investment Summary',
   'Default year': 'Investment Summary',
   'DSRA trigger': 'Investment Summary',
 }
 
-/* 섹션 순서 */
 const sectionOrder = [
   'Capital Structure',
   'Valuation Summary',
   'Investment Summary',
 ]
 
-/* 시나리오별 칼라 매핑 */
-const scenarioColor = (sc: string) => {
-  if (sc === 'Baseline')
-    return 'secondary'
-  if (sc === 'SSP126')
-    return 'info'
-  if (sc === 'SSP585')
-    return 'error'
-  if (sc === 'SSP170')
-    return 'warning'
+/* ===============================
+   Background Color Logic
+================================ */
+const getColumnColor = (col: string) => {
+  // ⭐ Compare Mode
+  if (props.mode === 'compare') {
+    if (col.toLowerCase().includes('before') || col.toLowerCase().includes('project'))
+      return 'rgba(var(--v-theme-secondary), 0.06)'
 
-  return 'success'
+    return 'rgba(var(--v-theme-success), 0.06)'
+  }
+
+  // ⭐ Scenario Mode (기존)
+  if (col === 'Baseline')
+    return 'rgba(var(--v-theme-secondary), 0.06)'
+  if (col === 'SSP126')
+    return 'rgba(var(--v-theme-info), 0.06)'
+  if (col === 'SSP585')
+    return 'rgba(var(--v-theme-error), 0.06)'
+  if (col === 'SSP170')
+    return 'rgba(var(--v-theme-warning), 0.06)'
+
+  return 'rgba(var(--v-theme-success), 0.06)'
 }
 
-const metricHeaderColor = scenarioColor(props.selectedScenarios[0])
+/* ===============================
+   Group Rows
+================================ */
+const grouped = sectionOrder.map(section => {
+  const first = props.scenarioData[props.selectedScenarios[0]] || []
 
-/* 그룹핑 */
-const groupedMetrics = sectionOrder.map(section => ({
-  section,
-  items: metricList.filter(m => sectionMap[m.label] === section),
-}))
+  const items = first
+    .filter(item => sectionMap[item.label] === section)
+    .map(item => ({
+      label: item.label,
+      values: props.selectedScenarios.map(sc => {
+        return props.scenarioData[sc]?.find(m => m.label === item.label)?.value ?? '-'
+      }),
+    }))
+
+  return { section, items }
+})
 </script>
 
 <template>
@@ -68,12 +99,10 @@ const groupedMetrics = sectionOrder.map(section => ({
     class="projection-wrapper"
     outlined
   >
-    <!-- ================================== -->
-    <!-- ⭐ Baseline Projection Report 헤더 -->
-    <!-- ================================== -->
+    <!-- ⭐ Title -->
     <VCardTitle class="projection-title px-6 py-4">
-      {{ selectedScenarios[0] }} Projection Report
-
+      <span v-if="props.mode === 'compare'">Financial Condition Comparison</span>
+      <span v-else>{{ props.selectedScenarios[0] }} Projection Report</span>
       <VBtn
         icon
         variant="tonal"
@@ -88,12 +117,9 @@ const groupedMetrics = sectionOrder.map(section => ({
       </VBtn>
     </VCardTitle>
 
-    <!-- 🔹 제목 아래 라인 -->
     <VDivider class="custom-divider" />
 
-    <!-- ========================= -->
-    <!-- ⭐ 테이블 영역 -->
-    <!-- ========================= -->
+    <!-- ⭐ Table -->
     <VCardText class="px-6 py-4">
       <table class="scenario-table">
         <thead>
@@ -101,22 +127,18 @@ const groupedMetrics = sectionOrder.map(section => ({
             <th
               class="metric-col"
               :style="{
-                backgroundColor: `rgba(var(--v-theme-${metricHeaderColor}), 0.06)`,
+                backgroundColor: `rgba(var(--v-theme-secondary), 0.06)`,
 
               }"
             >
               Metric
             </th>
 
-            <!-- 🔥 시나리오 헤더 컬러 적용 -->
             <th
-              v-for="sc in selectedScenarios"
+              v-for="sc in props.selectedScenarios"
               :key="sc"
               class="scenario-col"
-              :style="{
-                backgroundColor: `rgba(var(--v-theme-${scenarioColor(sc)}), 0.06)`,
-
-              }"
+              :style="{ backgroundColor: getColumnColor(sc) }"
             >
               {{ sc }}
             </th>
@@ -125,42 +147,33 @@ const groupedMetrics = sectionOrder.map(section => ({
 
         <tbody>
           <template
-            v-for="group in groupedMetrics"
+            v-for="group in grouped"
             :key="group.section"
           >
-            <!-- 섹션 타이틀 -->
             <tr class="section-row">
               <td
-                :colspan="1 + selectedScenarios.length"
                 class="section-title"
+                :colspan="1 + props.selectedScenarios.length"
               >
                 {{ group.section }}
               </td>
             </tr>
 
-            <!-- Metric Rows -->
             <tr
-              v-for="metric in group.items"
-              :key="metric.label"
+              v-for="row in group.items"
+              :key="row.label"
             >
               <td class="metric-name">
-                {{ metric.label }}
+                {{ row.label }}
               </td>
 
-              <!-- 🔥 값 셀에도 시나리오별 컬러 적용 -->
               <td
-                v-for="sc in selectedScenarios"
-                :key="sc"
+                v-for="(val, idx) in row.values"
+                :key="idx"
                 class="metric-value"
-                :style="{
-                  backgroundColor: `rgba(var(--v-theme-${scenarioColor(sc)}), 0.06)`,
-
-                }"
+                :style="{ backgroundColor: getColumnColor(props.selectedScenarios[idx]) }"
               >
-                {{
-                  scenarioData[sc]?.find(m => m.label === metric.label)?.value
-                    || '-'
-                }}
+                {{ val }}
               </td>
             </tr>
           </template>

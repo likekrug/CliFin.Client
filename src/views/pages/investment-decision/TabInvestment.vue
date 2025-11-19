@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import FinanceModal from './simulation/FinanceModal.vue'
 
-const emit = defineEmits(['changeTab'])
+const emit = defineEmits(['change-tab'])
 
 interface FinanceValue {
   before: {
@@ -237,6 +237,15 @@ const onCheckChanged = (p: Project, val: boolean | null) => {
     </VCol>
   </VRow>
 
+  <div class="d-flex justify-end mt-4">
+    <VBtn
+      color="primary"
+      class="text-end py-0"
+      @click="emit('change-tab', 'Result') "
+    >
+      View Result
+    </VBtn>
+  </div>
   <FinanceModal
     v-model="modalOpen"
     :project="targetProject"

@@ -8,13 +8,11 @@ import VChart from 'vue-echarts'
 
 const props = defineProps<{
   scenario: string
+
 }>()
 
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
 
-/* ===================================================
-   🎨 L이 원하는 컬러 세트
-=================================================== */
 const COLOR = {
   operation: '#6A5ACD',
   fuel: '#FF7F50',
@@ -69,7 +67,7 @@ const chartOptions = computed(() => ({
   },
 
   legend: {
-    bottom: 0,
+    bottom: 10,
     icon: 'circle',
     itemWidth: 10,
     itemHeight: 10,
@@ -78,7 +76,7 @@ const chartOptions = computed(() => ({
     textStyle: { fontSize: 12, color: '#444' },
   },
 
-  grid: { left: '5%', right: '5%', bottom: '12%', containLabel: true },
+  grid: { left: '5%', right: '5%', bottom: 80, containLabel: true },
 
   xAxis: {
     type: 'category',
@@ -206,7 +204,7 @@ onMounted(() => {
         v-if="isReady"
         :option="chartOptions"
         autoresize
-        style="block-size: 520px; inline-size: 100%;"
+        style="block-size: 560px; inline-size: 100%;"
       />
     </VCardText>
   </VCard>

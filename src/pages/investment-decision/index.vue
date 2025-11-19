@@ -35,7 +35,6 @@ const handleChangeTab = (target: string) => {
     <VCardText class="pt-0">
       <VWindow v-model="currentTab">
         <VWindowItem value="Investment Decision Simulation">
-          <!-- ⚡ selected prop 전달 (필수) -->
           <TabInvestment @change-tab="handleChangeTab" />
         </VWindowItem>
 
