@@ -77,8 +77,9 @@ const boardActions = [
 }
 
 .project-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 8%);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 10%);
+  outline: 1px solid rgba(var(--v-border-color), 0.2); /* ⭐ 추가 */
+  outline-offset: 0;
 }
 
 .project-card.active {

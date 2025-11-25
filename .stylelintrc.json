@@ -30,7 +30,7 @@
       }
     ],
     "@stylistic/indentation": 2,
-    "liberty/use-logical-spec": true,
+    "liberty/use-logical-spec": null,
     "selector-class-pattern": null,
     "color-function-notation": null,
     "annotation-no-unknown": [

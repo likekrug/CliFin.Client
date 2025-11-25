@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import FinanceModal from './simulation/FinanceModal.vue'
 
-const emit = defineEmits(['change-tab'])
+const emit = defineEmits(['changeTab'])
 
 interface FinanceValue {
   before: {
@@ -144,6 +144,7 @@ const onCheckChanged = (p: Project, val: boolean | null) => {
     <div class="vertical-bar me-2" />
     Select Your Project and Set financial conditions.
   </div>
+
   <VRow
     dense
     align="start"
@@ -153,12 +154,12 @@ const onCheckChanged = (p: Project, val: boolean | null) => {
       :key="p.id"
       cols="12"
       sm="4"
-      y
       md="2"
     >
       <VCard
         class="pa-4 card-box"
         variant="outlined"
+        :class="p.checked ? 'card-selected' : ''"
       >
         <!-- Header -->
         <div class="d-flex justify-space-between mb-2">
@@ -197,7 +198,6 @@ const onCheckChanged = (p: Project, val: boolean | null) => {
               p.finance.visible.de
               || p.finance.visible.tenor
               || p.finance.visible.dsra,
-
             hidden:
               !(
                 p.finance.visible.de
@@ -241,11 +241,12 @@ const onCheckChanged = (p: Project, val: boolean | null) => {
     <VBtn
       color="primary"
       class="text-end py-0"
-      @click="emit('change-tab', 'Result') "
+      @click="emit('changeTab', 'Result')"
     >
       View Result
     </VBtn>
   </div>
+
   <FinanceModal
     v-model="modalOpen"
     :project="targetProject"
@@ -259,6 +260,13 @@ const onCheckChanged = (p: Project, val: boolean | null) => {
   flex-direction: column;
 }
 
+.card-selected {
+  border-width: 1px !important;   /* 얇은 라인 */
+  border-color: rgb(var(--v-theme-primary)) !important;
+  box-shadow: none !important;    /* 두꺼워 보이는 효과 제거 */
+}
+
+/* Financial info box */
 .financial-box.visible {
   padding: 12px;
   border-radius: 8px;

@@ -37,11 +37,11 @@ const dscrLine = { name: 'DSCR', color: '#FF69B4', data: allSeriesData.dscr }
 // ⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆
 
 // ⭐ 범례 색상 자동 반영
-const legendColors = Object.fromEntries([
-  ...baseSeries.map(s => [s.name, s.color]),
-  ['Revenue', revenueLine.color],
-  ['DSCR', dscrLine.color],
-])
+// const legendColors = Object.fromEntries([
+//   ...baseSeries.map(s => [s.name, s.color]),
+//   ['Revenue', revenueLine.color],
+//   ['DSCR', dscrLine.color],
+// ])
 
 const chartOptions = computed(() => ({
   tooltip: {
@@ -159,11 +159,33 @@ const chartOptions = computed(() => ({
 <template>
   <VCard
     outlined
-    class="pa-0"
+    class="projection-wrapper pa-0"
   >
     <VCardTitle class="px-6 py-4">
       Cash Flow Overview
     </VCardTitle>
+    <VDivider />
+    <VCardText class="px-6 pt-6 pb-0 mb-3">
+      <div class="finance-bg pa-4 mb-4">
+        <div class="text-h6 ld mb-3">
+          Monte Carlo Simulation Conditions
+        </div>
+        <ul class="fin-list">
+          <li>
+            Federal Corporate Tax -  Mean : 20 / Std : 10
+          </li>
+
+          <li>
+            State Corporate Tax - Mean : 15 / Std : 20
+          </li>
+
+          <li>
+            Number of runs : 10
+          </li>
+        </ul>
+      </div>
+    </VCardText>
+
     <VCardText class="px-6 py-4">
       <VChart
         :option="chartOptions"
@@ -175,8 +197,39 @@ const chartOptions = computed(() => ({
 </template>
 
 <style scoped>
-.v-card {
+/* .v-card {
   border-radius: 12px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 8%);
+} */
+
+.projection-wrapper {
+  border: 1px solid rgba(var(--v-border-color), 0.2) !important;
+  border-radius: 10px !important;
+  background-color: rgb(var(--v-theme-surface)) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 10%) !important;
+}
+
+.finance-box {
+  border: 1px solid rgba(var(--v-border-color), 0.2);
+  border-radius: 12px;
+  background: rgba(var(--v-theme-secondary), 0.08);
+}
+
+.finance-bg {
+  border-radius: 12px;
+  background: rgba(var(--v-theme-secondary), 0.08);
+}
+
+.fin-list {
+  padding: 0;
+  list-style: none;
+  margin-block: 0 16px;
+  margin-inline: 0;
+
+  li {
+    color: rgba(var(--v-theme-on-surface), 0.9);
+    font-size: 0.92rem;
+    margin-block-end: 6px;
+  }
 }
 </style>
