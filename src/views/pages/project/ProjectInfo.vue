@@ -1,122 +1,124 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import InformationDrawer from './InformationDrawer.vue'
 import MapSearchDialog from './MapSearchDialog.vue'
 
-// ----------------------
-// 🔹 프로젝트 기본 정보
-// ----------------------
+import { useAssetStore } from '@/stores/asset.store'
+import { useProjectDefaultStore } from '@/stores/projectDefault.store'
+
+import type { ProjectDefaultData } from '@/types/projectDefault.types'
+import { getCategories, getGroups } from '@/utils/projectDefault.helper'
+
+// ------------------------
+// STORE
+// ------------------------
+const assetStore = useAssetStore()
+const projectDefaultStore = useProjectDefaultStore()
+
+assetStore.load()
+
+// ------------------------
+// 기본 Project 정보
+// ------------------------
 const projectName = ref('')
-const selectedType = ref<string | null>(null)
+const selectedType = ref<keyof ProjectDefaultData>('coal')
 
-const assetTypes = ref([
-  { id: 'coal', name: 'Coal' },
-  { id: 'gas', name: 'Natural Gas' },
-  { id: 'solar', name: 'Solar' },
-  { id: 'wind', name: 'Wind' },
-])
+// flat model (itemCode → value)
+const model = ref<Record<string, any>>({})
 
-// ----------------------
-// 🔹 Location 상태
-// ----------------------
+// ------------------------
+// 위치 정보
+// ------------------------
 const location = ref<{ lat: number; lng: number } | null>(null)
 const address = ref('')
 const dialog = ref(false)
 
-// ----------------------
-// 🔹 Asset Characteristics
-// ----------------------
-const fuelExpense = ref({
-  capacity: null,
-  capacity_factor: null,
-  heat_rate: null,
-})
-
-const capex = ref({
-  power_generation: null,
-  general_facilities: null,
-  plant_equipment: null,
-  construction_labor: null,
-  project_management: null,
-  spare_parts: null,
-  other_costs: null,
-  sales_tax_rate: null,
-})
-
-// ----------------------
-// 🔹 Market Conditions
-// ----------------------
-const revenue = ref({
-  sell_price: null,
-  sell_price_escalator: null,
-  capacity_revenue: null,
-  capacity_revenue_escalator: null,
-})
-
-const expense = ref({
-  o_and_m_variable: null,
-  o_and_m_fixed: null,
-  fuel_price: null,
-  insurance_rate: null,
-  property_tax_rate: null,
-  insurance_escalator: null,
-  common_escalator: null,
-})
-
-// ----------------------
-// 🔹 Financing & Tax
-// ----------------------
-const finance = ref({
-  tenor: null,
-  interest_rate: null,
-  debt_to_equity: null,
-  commitment_fee_rate: null,
-  upfront_fee_rate: null,
-  maintenance_capex: null,
-})
-
-const tax = ref({
-  federal_tax_rate: null,
-})
-
-// ----------------------
-// 🔹 DSRA
-// ----------------------
-const dsra = ref({
-  enabled: true,
-  threshold: null,
-})
-
-// ----------------------
-// 🔹 위치 선택
-// ----------------------
 const onSelectLocation = (coords: { lat: number; lng: number; address: string }) => {
   location.value = { lat: coords.lat, lng: coords.lng }
   address.value = coords.address
   dialog.value = false
 }
 
-// ----------------------
-// 🔹 아코디언 상태
-// ----------------------
-const isExpandedAsset = ref(true)
-const isExpandedMarket = ref(true)
-const isExpandedFinance = ref(true)
+// ------------------------
+// 카테고리별 아코디언 상태 (동적)
+// ------------------------
+const expandedMap = reactive<Record<string, boolean>>({})
 
-// ----------------------
-// 🔹 Drawer
-// ----------------------
+// ------------------------
+// Drawer
+// ------------------------
 const isInfoDrawer = ref(false)
-const drawerCategory = ref<'asset' | 'market' | 'finance'>('asset')
+const drawerCategory = ref<'C1' | 'C3' | 'C4'>('C1')
 
-const openDrawer = (category: 'asset' | 'market' | 'finance') => {
+const openDrawer = (category: 'C1' | 'C3' | 'C4') => {
   drawerCategory.value = category
   isInfoDrawer.value = true
+}
+
+// ------------------------
+// default 데이터 로드
+// ------------------------
+onMounted(async () => {
+  await projectDefaultStore.loadDefaultData()
+
+  model.value = projectDefaultStore.buildModel(selectedType.value)
+
+  const cats = projectDefaultStore.getDefaultsByType(selectedType.value)?.categories ?? []
+
+  cats.forEach(cat => {
+    expandedMap[cat.categoryCode] = true
+  })
+})
+
+// asset 변경 시
+watch(selectedType, newVal => {
+  model.value = projectDefaultStore.buildModel(newVal)
+
+  const cats = projectDefaultStore.getDefaultsByType(newVal)?.categories ?? []
+
+  Object.keys(expandedMap).forEach(k => delete expandedMap[k])
+
+  cats.forEach(cat => {
+    expandedMap[cat.categoryCode] = true
+  })
+})
+
+// 현재 assetType 전체 구조
+const currentAsset = computed(() => {
+  return projectDefaultStore.getDefaultsByType(selectedType.value)
+})
+
+const validateItem = (value: any, item: any) => {
+  if (value === null || value === '' || value === undefined)
+    return true
+
+  const num = Number(value)
+  const min = Number(item.min)
+  const max = Number(item.max)
+
+  if (isNaN(num))
+    return false
+
+  return num >= min && num <= max
+}
+
+const formatNumber = (value: any) => {
+  if (value === null || value === undefined || value === '')
+    return ''
+
+  return Number(value).toLocaleString('en-US')
+}
+
+const parseNumber = (value: string) => {
+  if (!value)
+    return null
+
+  return Number(String(value).replace(/,/g, ''))
 }
 </script>
 
 <template>
-  <!-- 1️⃣ Project Information -->
+  <!-- 1) Project Info -->
   <VCard
     flat
     variant="outlined"
@@ -126,6 +128,7 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
       <VCardTitle>Project Information</VCardTitle>
     </VCardItem>
     <VDivider />
+
     <VCardText class="card-text">
       <VRow class="align-center no-gutters">
         <VCol
@@ -154,7 +157,7 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
             class="mt-0"
           >
             <VRadio
-              v-for="item in assetTypes"
+              v-for="item in assetStore.list"
               :key="item.id"
               :label="item.name"
               :value="item.id"
@@ -190,6 +193,7 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
             />
             Location
           </div>
+
           <VRow class="align-start">
             <VCol
               cols="12"
@@ -241,381 +245,116 @@ const openDrawer = (category: 'asset' | 'market' | 'finance') => {
           />
         </VCol>
       </VRow>
-
-      <div class="bg-var-theme-background rounded pa-5 mt-4">
-        <h6 class="text-h6">
-          Default values are provided, but you can modify them according to your project.
-        </h6>
-        <p class="my-2 text-body-1">
-          By creating a project, you are deemed to have agreed to
-          <a
-            href="javascript:void(0)"
-            class="font-weight-medium d-inline-block"
-          >our terms of service.</a>
-        </p>
-      </div>
     </VCardText>
   </VCard>
 
-  <!-- 2️⃣ Asset Characteristics -->
-  <VCard
-    flat
-    variant="outlined"
-    class="mt-3"
+  <!-- 2) Category별 개별 아코디언 카드 -->
+  <template
+    v-for="cat in getCategories(currentAsset)"
+    :key="cat.categoryCode"
   >
-    <VCardItem>
-      <div class="d-flex align-center justify-space-between w-100">
-        <div class="d-flex align-center">
-          <VCardTitle class="me-2">
-            Asset Specifications
-          </VCardTitle>
-          <VAvatar
-            color="warning"
-            variant="tonal"
-            size="28"
-            class="cursor-pointer"
-            @click="openDrawer('asset')"
+    <VCard
+      flat
+      variant="outlined"
+      class="mt-3"
+    >
+      <VCardItem>
+        <div class="d-flex align-center justify-space-between w-100">
+          <div class="d-flex align-center">
+            <VCardTitle class="me-2">
+              {{ cat.categoryName }}
+            </VCardTitle>
+
+            <VAvatar
+              color="warning"
+              variant="tonal"
+              size="28"
+              class="cursor-pointer"
+              @click="openDrawer(cat.categoryCode)"
+            >
+              <VIcon
+                icon="ri-question-line"
+                size="16"
+              />
+            </VAvatar>
+          </div>
+
+          <IconBtn
+            :color="expandedMap[cat.categoryCode] ? 'primary' : 'default'"
+            @click="expandedMap[cat.categoryCode] = !expandedMap[cat.categoryCode]"
           >
             <VIcon
-              icon="ri-question-line"
-              size="16"
+              size="20"
+              :icon="expandedMap[cat.categoryCode] ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"
             />
-          </VAvatar>
+          </IconBtn>
         </div>
-        <IconBtn
-          :color="isExpandedAsset ? 'primary' : 'default'"
-          @click="isExpandedAsset = !isExpandedAsset"
-        >
-          <VIcon
-            size="20"
-            :icon="isExpandedAsset ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"
-          />
-        </IconBtn>
-      </div>
-    </VCardItem>
+      </VCardItem>
 
-    <VExpandTransition>
-      <div v-show="isExpandedAsset">
-        <VDivider />
-        <VCardText>
-          <div class="mb-4">
-            <div class="d-flex align-center text-body-1 mb-3">
-              <div class="vertical-bar me-2" /> Fuel Expense
-            </div>
-            <VRow>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="fuelExpense.capacity"
-                  label="Capacity"
-                  suffix="MW"
-                  hint="300–1000 MW"
-                  persistent-hint
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="fuelExpense.capacity_factor"
-                  label="Capacity Factor"
-                  suffix="%"
-                  hint="50–90 %"
-                  persistent-hint
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="fuelExpense.heat_rate"
-                  label="Heat Rate"
-                  suffix="MMBtu/MWh"
-                  hint="8.5–10.5 MMBtu/MWh"
-                  persistent-hint
-                />
-              </VCol>
-            </VRow>
-          </div>
-
-          <div>
-            <div class="d-flex align-center text-body-1 mb-3">
-              <div class="vertical-bar me-2" /> Capex
-            </div>
-            <VRow>
-              <VCol
-                v-for="(val, key) in capex"
-                :key="key"
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="capex[key]"
-                  :label="key.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())"
-                  suffix="$"
-                  persistent-hint
-                  autocomplete="off"
-                />
-              </VCol>
-            </VRow>
-          </div>
-        </VCardText>
-      </div>
-    </VExpandTransition>
-  </VCard>
-
-  <!-- 3️⃣ Market Conditions -->
-  <VCard
-    flat
-    variant="outlined"
-    class="mt-3"
-  >
-    <VCardItem>
-      <div class="d-flex align-center justify-space-between w-100">
-        <div class="d-flex align-center">
-          <VCardTitle class="me-2">
-            Market Conditions
-          </VCardTitle>
-          <VAvatar
-            color="warning"
-            variant="tonal"
-            size="28"
-            class="cursor-pointer"
-            @click="openDrawer('market')"
-          >
-            <VIcon
-              icon="ri-chat-1-line"
-              size="16"
-            />
-          </VAvatar>
-        </div>
-        <IconBtn
-          :color="isExpandedMarket ? 'primary' : 'default'"
-          @click="isExpandedMarket = !isExpandedMarket"
-        >
-          <VIcon
-            size="20"
-            :icon="isExpandedMarket ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"
-          />
-        </IconBtn>
-      </div>
-    </VCardItem>
-
-    <VExpandTransition>
-      <div v-show="isExpandedMarket">
-        <VDivider />
-        <VCardText>
-          <div class="mb-4">
-            <div class="d-flex align-center text-body-1 mb-3">
-              <div class="vertical-bar me-2" /> Revenue
-            </div>
-            <VRow>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="revenue.sell_price"
-                  label="Sell price"
-                  suffix="$/MWh"
-                  hint="30–70 $/MWh"
-                  persistent-hint
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="revenue.sell_price_escalator"
-                  label="Sell price escalator"
-                  suffix="%"
-                  hint="1–3 %"
-                  persistent-hint
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="revenue.capacity_revenue"
-                  label="Capacity revenue"
-                  suffix="$/MW-yr"
-                  hint="30–100 $/MW-yr"
-                  persistent-hint
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="revenue.capacity_revenue_escalator"
-                  label="Capacity revenue escalator"
-                  suffix="%"
-                  hint="1–3 %"
-                  persistent-hint
-                />
-              </VCol>
-            </VRow>
-          </div>
-
-          <div>
-            <div class="d-flex align-center text-body-1 mb-3">
-              <div class="vertical-bar me-2" /> Expense
-            </div>
-            <VRow>
-              <VCol
-                v-for="(val, key) in expense"
-                :key="key"
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="expense[key]"
-                  :label="key.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())"
-                  suffix="%"
-                  persistent-hint
-                />
-              </VCol>
-            </VRow>
-          </div>
-        </VCardText>
-      </div>
-    </VExpandTransition>
-  </VCard>
-
-  <!-- 4️⃣ Financing Terms & Tax -->
-  <VCard
-    flat
-    variant="outlined"
-    class="mt-3"
-  >
-    <VCardItem>
-      <div class="d-flex align-center justify-space-between w-100">
-        <div class="d-flex align-center">
-          <VCardTitle class="me-2">
-            Financing Terms Conditions
-          </VCardTitle>
-          <VAvatar
-            size="28"
-            variant="outlined"
-            color="secondary"
-            rounded
-            class="cursor-pointer"
-            @click="openDrawer('finance')"
-          >
-            <VIcon
-              icon="ri-question-line"
-              size="16"
-            />
-          </VAvatar>
-        </div>
-        <IconBtn
-          :color="isExpandedFinance ? 'primary' : 'default'"
-          @click="isExpandedFinance = !isExpandedFinance"
-        >
-          <VIcon
-            size="20"
-            :icon="isExpandedFinance ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"
-          />
-        </IconBtn>
-      </div>
-    </VCardItem>
-
-    <VExpandTransition>
-      <div v-show="isExpandedFinance">
-        <VDivider />
-        <VCardText>
-          <div class="mb-4">
-            <div class="d-flex align-center text-body-1 mb-3">
-              <div class="vertical-bar me-2" /> Financial Terms
-            </div>
-            <VRow>
-              <VCol
-                v-for="(val, key) in finance"
-                :key="key"
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="finance[key]"
-                  :label="key.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())"
-                  suffix="%"
-                  persistent-hint
-                />
-              </VCol>
-            </VRow>
-          </div>
-
-          <div class="mb-4">
-            <div class="d-flex align-center text-body-1 mb-3">
-              <div class="vertical-bar me-2" /> Tax
-            </div>
-            <VRow>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="tax.federal_tax_rate"
-                  label="Federal tax rate"
-                  suffix="%"
-                  hint="15–35 %"
-                  persistent-hint
-                />
-              </VCol>
-            </VRow>
-          </div>
-
-          <div class="mb-4">
-            <div class="d-flex align-center text-body-1 mb-3">
-              <div class="vertical-bar me-2" /> DSRA
-            </div>
-            <VRow>
-              <VCol
-                cols="12"
-                md="3"
-              >
-                <div class="d-flex align-center">
-                  <span class="text-body-1 me-2">No</span>
-                  <VSwitch
-                    v-model="dsra.enabled"
-                    color="primary"
-                    inset
-                    hide-details
-                  />
-                  <span class="text-body-1 ms-2">Yes</span>
+      <VExpandTransition>
+        <div v-show="expandedMap[cat.categoryCode]">
+          <VDivider />
+          <VCardText>
+            <!-- 그룹 반복 -->
+            <template
+              v-for="grp in getGroups(cat)"
+              :key="grp.groupCode"
+            >
+              <div class="mb-4">
+                <div class="d-flex align-center text-body-1 mb-3">
+                  <div class="vertical-bar me-2" /> {{ grp.groupName }}
                 </div>
-              </VCol>
-              <VCol
-                v-if="dsra.enabled"
-                cols="12"
-                md="3"
-              >
-                <VTextField
-                  v-model="dsra.threshold"
-                  label="Threshold"
-                  hint="e.g. 1.5"
-                  persistent-hint
-                />
-              </VCol>
-            </VRow>
-          </div>
-        </VCardText>
-      </div>
-    </VExpandTransition>
-  </VCard>
 
-  <!-- ✅ Information Drawer -->
+                <VRow>
+                  <VCol
+                    v-for="item in grp.items"
+                    :key="item.itemCode"
+                    cols="12"
+                    md="3"
+                  >
+                    <VTextField
+                      :label="item.itemName"
+                      :suffix="item.unit !== 'NaN' ? item.unit : ''"
+                      :model-value="formatNumber(model[item.itemCode])"
+                      :error="!validateItem(model[item.itemCode], item)"
+
+                      :error-messages="
+                        !validateItem(model[item.itemCode], item)
+                          ? `${formatNumber(item.min)} ~ ${formatNumber(item.max)} ${
+                            item.unit !== 'NaN' ? item.unit : ''
+                          }`
+                          : ''
+                      "
+                      hide-details="auto"
+                      autocomplete="off"
+                      @update:model-value="val => model[item.itemCode] = parseNumber(val)"
+                    >
+                      <!-- X 버튼: default 값으로 리셋 -->
+                      <template #append-inner>
+                        <VIcon
+                          v-if="model[item.itemCode] !== item.default"
+                          icon="ri-close-circle-line"
+                          class="cursor-pointer"
+                          size="18"
+                          color="grey"
+                          @click.stop="model[item.itemCode] = item.default"
+                        />
+                      </template>
+                    </VTextField>
+                  </VCol>
+                </VRow>
+              </div>
+            </template>
+          </VCardText>
+        </div>
+      </VExpandTransition>
+    </VCard>
+  </template>
+
+  <!-- Drawer -->
   <InformationDrawer
     v-model="isInfoDrawer"
     :category="drawerCategory"
-    :asset-type="selectedType || 'coal'"
+    :asset-type="selectedType"
   />
 </template>

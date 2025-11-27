@@ -5,7 +5,7 @@ import { useDisplay } from 'vuetify'
 
 interface Props {
   modelValue: boolean
-  category: 'asset' | 'market' | 'finance'
+  category: 'C1' | 'C3' | 'C4'
   assetType: string
 }
 
@@ -59,9 +59,9 @@ watch(
 // ✅ Drawer 섹션 제목
 const sectionTitle = computed(() => {
   switch (props.category) {
-    case 'asset': return 'Asset Characteristics'
-    case 'market': return 'Market Conditions'
-    case 'finance': return 'Financing Terms & Tax'
+    case 'C1': return 'Asset Characteristics'
+    case 'C3': return 'Market Conditions'
+    case 'C4': return 'Financing Terms & Tax'
     default: return 'Information'
   }
 })
@@ -69,7 +69,7 @@ const sectionTitle = computed(() => {
 // ✅ Drawer 내용 데이터
 const infoData = computed(() => {
   switch (props.category) {
-    case 'asset':
+    case 'C1':
       return [
         {
           title: 'Fuel Expense',
@@ -92,7 +92,7 @@ const infoData = computed(() => {
         },
       ]
 
-    case 'market':
+    case 'C3':
       return [
         {
           title: 'Revenue',
@@ -112,7 +112,7 @@ const infoData = computed(() => {
         },
       ]
 
-    case 'finance':
+    case 'C4':
       return [
         {
           title: 'Financial Terms',
