@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import VueApexCharts from 'vue3-apexcharts'
+
 import type { ApexOptions } from 'apexcharts'
 
 // -------------------------------

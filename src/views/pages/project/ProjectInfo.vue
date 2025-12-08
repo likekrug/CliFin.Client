@@ -122,14 +122,14 @@ const parseNumber = (value: string) => {
   <VCard
     flat
     variant="outlined"
-    class="mt-0 first-card"
+    class="mt-0"
   >
-    <VCardItem class="item-card">
+    <VCardItem class="py-4">
       <VCardTitle>Project Information</VCardTitle>
     </VCardItem>
     <VDivider />
 
-    <VCardText class="card-text">
+    <VCardText>
       <VRow class="align-center no-gutters">
         <VCol
           cols="12"
@@ -258,10 +258,10 @@ const parseNumber = (value: string) => {
       variant="outlined"
       class="mt-3"
     >
-      <VCardItem>
+      <VCardItem class="py-3">
         <div class="d-flex align-center justify-space-between w-100">
           <div class="d-flex align-center">
-            <VCardTitle class="me-2">
+            <VCardTitle>
               {{ cat.categoryName }}
             </VCardTitle>
 
