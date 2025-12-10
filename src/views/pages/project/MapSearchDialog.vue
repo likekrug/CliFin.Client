@@ -2,12 +2,6 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { ensureGoogleMapsLoaded } from '@/utils/googleMaps'
 
-// declare global {
-//   interface Window {
-//     google: any
-//   }
-// }
-
 interface Props {
   modelValue: boolean
   initLocation?: { lat: number; lng: number } | null
@@ -26,7 +20,7 @@ const dialog = computed({
 const defaultCenter = { lat: 36.372161, lng: 127.360382 }
 const defaultAddress = 'KAIST, Daejeon, South Korea'
 
-const searchText = ref<string>('') // full address
+const searchText = ref<string>('')
 const pos = ref<{ lat: number; lng: number }>(defaultCenter)
 const initFullAddress = ref<string>(defaultAddress)
 
@@ -42,6 +36,7 @@ const currentLat = ref<number | null>(null)
 const currentLng = ref<number | null>(null)
 const currentAddress = ref<string>('') // city + country only
 
+// confirm 활성화 조건
 const isConfirmDisabled = computed(() => !currentLat.value || !currentLng.value)
 
 async function loadFullAddressFromLatLng(lat: number, lng: number): Promise<string | null> {
@@ -80,6 +75,7 @@ function extractCityCountry(
 }
 
 const isMapInitialized = ref(false)
+
 async function initMap() {
   const google = await ensureGoogleMapsLoaded()
 
@@ -91,7 +87,7 @@ async function initMap() {
   const Map = mapsLib.Map
   const AdvancedMarkerElement = markerLib.AdvancedMarkerElement
   const Geocoder = geocoderLib.Geocoder
-  const { AutocompleteSessionToken } = placesLib // Place 클래스 추가
+  const { AutocompleteSessionToken } = placesLib
 
   const mapEl = document.getElementById('map')
   if (!mapEl)
@@ -102,21 +98,41 @@ async function initMap() {
 
   const geocoder = new Geocoder()
 
-  // 부모에서 받은 값 세팅
+  // --------------------------
+  // 부모에서 받은 초기값 세팅
+  // --------------------------
   pos.value = props.initLocation ?? defaultCenter
   initFullAddress.value = props.initAddress?.trim() || defaultAddress
 
-  // 좌표 기준 fullAddress 재조회
+  // full address 조회
   const resolved = await loadFullAddressFromLatLng(pos.value.lat, pos.value.lng)
+  const fullAddress = resolved || initFullAddress.value
 
-  // 검색창 표시값
-  searchText.value = resolved || initFullAddress.value
+  searchText.value = fullAddress
 
-  // short address (city, country) 초기 설정
   currentLat.value = pos.value.lat
   currentLng.value = pos.value.lng
-  currentAddress.value = extractCityCountry() // 초기 currentAddress는 정확하지 않을 수 있음
 
+  // --------------------------
+  // 🔥 핵심 수정 포인트
+  // full address 로부터 city + country 추출
+  // --------------------------
+  geocoder.geocode({ address: fullAddress, language: 'en' }, (results, status) => {
+    if (status === 'OK' && results?.[0]) {
+      const shortAddr = extractCityCountry(
+        results[0].address_components.map(c => ({
+          longText: c.long_name,
+          types: c.types,
+        })),
+      )
+
+      currentAddress.value = shortAddr
+    }
+  })
+
+  // --------------------------
+  // 지도 생성
+  // --------------------------
   map = new Map(mapEl, {
     center: pos.value,
     zoom: 14,
@@ -128,7 +144,9 @@ async function initMap() {
     position: pos.value,
   })
 
-  // 2. 지도 클릭 리스너 추가 (Place Name 조회 포함)
+  // --------------------------
+  // 지도 클릭 이벤트
+  // --------------------------
   map.addListener('click', (e: google.maps.MapMouseEvent) => {
     if (!e.latLng)
       return
@@ -136,7 +154,6 @@ async function initMap() {
     const lat = e.latLng.lat()
     const lng = e.latLng.lng()
 
-    // 마커 이동/생성
     if (!marker) {
       marker = new AdvancedMarkerElement({ map, position: e.latLng })
     }
@@ -145,15 +162,10 @@ async function initMap() {
       marker.position = e.latLng
     }
 
-    // 역지오코딩 (Place ID 포함) 및 상세 정보 조회
-    geocoder.geocode({ location: e.latLng, language: 'en' }, async ( // async 추가
-      results: google.maps.GeocoderResult[] | null,
-      status: google.maps.GeocoderStatus,
-    ) => {
-      if (status === 'OK' && results && results[0]) {
+    geocoder.geocode({ location: e.latLng, language: 'en' }, (results, status) => {
+      if (status === 'OK' && results?.[0]) {
         const fullAddress = results[0].formatted_address
 
-        // short address (city, country) 추출
         const shortAddr = extractCityCountry(
           results[0].address_components.map(c => ({
             longText: c.long_name,
@@ -164,7 +176,7 @@ async function initMap() {
         currentLat.value = lat
         currentLng.value = lng
         currentAddress.value = shortAddr
-        searchText.value = fullAddress // 검색창에도 전체 주소 표시
+        searchText.value = fullAddress
       }
     })
   })
@@ -172,24 +184,23 @@ async function initMap() {
   isMapInitialized.value = true
 }
 
+// dialog 열릴 때 map 로딩
 watch(dialog, async opened => {
   if (!opened) {
-    // 다이얼로그가 닫힐 때, 다음 오픈을 위해 초기화 상태를 리셋합니다.
     isMapInitialized.value = false
 
     return
   }
 
-  // 다이얼로그가 열렸고, 아직 지도가 초기화되지 않았다면
   if (opened && !isMapInitialized.value) {
     await nextTick()
     await initMap()
-    isMapInitialized.value = true // 초기화 완료 플래그 설정
   }
 })
 
 const isSelecting = ref(false)
 
+// 자동완성 입력
 async function handleInput(val: string | null | undefined) {
   if (isSelecting.value)
     return
@@ -222,6 +233,7 @@ async function handleInput(val: string | null | undefined) {
   showSuggestions.value = suggestions.value.length > 0
 }
 
+// 자동완성 선택 처리
 async function handleSelectSuggestion(text: string, placeId: string) {
   isSelecting.value = true
   showSuggestions.value = false
@@ -250,12 +262,6 @@ async function handleSelectSuggestion(text: string, placeId: string) {
 
   map.setCenter(loc)
   marker.position = loc
-
-  // infoWindow.setContent(`
-  // <div class="map-info-title">${place.displayName}</div>
-  // <div class="map-info-address">${fullAddr}</div>
-  // `)
-  // infoWindow.open({ map, anchor: marker })
 
   currentLat.value = loc.lat()
   currentLng.value = loc.lng()
