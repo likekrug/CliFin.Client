@@ -11,7 +11,6 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits(['update:modelValue', 'selectLocation'])
 
-// dialog v-model
 const dialog = computed({
   get: () => props.modelValue,
   set: v => emit('update:modelValue', v),
@@ -43,31 +42,32 @@ async function loadFullAddressFromLatLng(lat: number, lng: number): Promise<stri
   const geocoder = new google.maps.Geocoder()
 
   return new Promise(resolve => {
-    geocoder.geocode({ location: { lat, lng }, language: 'en' }, (results, status) => {
-      if (status === 'OK' && results?.[0])
-        resolve(results[0].formatted_address)
-      else
-        resolve(null)
-    })
+    geocoder.geocode(
+      { location: { lat, lng }, language: 'en' },
+      (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+        if (status === 'OK' && results?.[0])
+          resolve(results[0].formatted_address)
+        else
+          resolve(null)
+      },
+    )
   })
 }
 
-function extractCityCountry(
-  components?: { longText: string; types: string[] }[],
-): string {
+function extractCityCountry(components?: { longText: string; types: string[] }[]): string {
   if (!components)
     return ''
 
   let city = ''
   let country = ''
 
-  for (const c of components) {
-    if (c.types.includes('locality'))
-      city = c.longText
-    if (!city && c.types.includes('administrative_area_level_1'))
-      city = c.longText
-    if (c.types.includes('country'))
-      country = c.longText
+  for (const comp of components) {
+    if (comp.types.includes('locality'))
+      city = comp.longText
+    if (!city && comp.types.includes('administrative_area_level_1'))
+      city = comp.longText
+    if (comp.types.includes('country'))
+      country = comp.longText
   }
 
   return city && country ? `${city}, ${country}` : city || country
@@ -97,26 +97,20 @@ async function initMap() {
 
   const geocoder = new Geocoder()
 
-  // 부모로부터 받은 init 값 적용
+  // 초기 위치 설정
   pos.value = props.initLocation ?? defaultCenter
   initFullAddress.value = props.initAddress?.trim() || defaultAddress
 
-  // 좌표 기준 full address 조회
   const resolved = await loadFullAddressFromLatLng(pos.value.lat, pos.value.lng)
-  const fullAddress = resolved || initFullAddress.value
+  const initialFullAddr = resolved || initFullAddress.value
 
-  searchText.value = fullAddress
-
+  searchText.value = initialFullAddr
   currentLat.value = pos.value.lat
   currentLng.value = pos.value.lng
 
-  // 초기 city/country 셋팅
   geocoder.geocode(
-    { address: fullAddress, language: 'en' },
-    (
-      results: google.maps.GeocoderResult[] | null,
-      status: google.maps.GeocoderStatus,
-    ) => {
+    { address: initialFullAddr, language: 'en' },
+    (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
       if (status === 'OK' && results?.[0]) {
         const shortAddr = extractCityCountry(
           results[0].address_components.map(c => ({
@@ -130,51 +124,37 @@ async function initMap() {
     },
   )
 
-  // 지도 생성
   map = new Map(mapEl, {
     center: pos.value,
     zoom: 14,
     mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
   })
 
-  // 초기 마커 생성
   marker = new AdvancedMarkerElement({
     map,
     position: pos.value,
   })
 
-  // 초기 마커 클릭 → 우리가 만든 InfoWindow 표시
+  // 초기 + 검색 후 마커 클릭
   marker.addListener('click', () => {
-    const markerPos = marker.position
-
-    const lat
-    = typeof markerPos.lat === 'function' ? markerPos.lat() : markerPos.lat
-
-    const lng
-    = typeof markerPos.lng === 'function' ? markerPos.lng() : markerPos.lng
+    const p = marker.position
+    const lat = typeof p.lat === 'function' ? p.lat() : p.lat
+    const lng = typeof p.lng === 'function' ? p.lng() : p.lng
 
     geocoder.geocode(
       { location: { lat, lng }, language: 'en' },
-      (
-        geoResults: google.maps.GeocoderResult[] | null,
-        geoStatus: google.maps.GeocoderStatus,
-      ) => {
-        if (geoStatus === 'OK' && geoResults?.[0]) {
-          const addr = geoResults[0].formatted_address
-
-          const placeName
-          = geoResults[0].address_components[0]?.long_name
-          || 'Selected Location'
+      (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+        if (status === 'OK' && results?.[0]) {
+          const addr = results[0].formatted_address
+          const name = results[0].address_components[0]?.long_name || 'Selected Location'
 
           infoWindow.setContent(`
-          <div style="font-weight:600">${placeName}</div>
-          <div style="font-size:13px">${addr}</div>
-          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    addr,
-  )}"
-            target="_blank"
-            style="font-size:12px;color:#1a73e8;">View on Google Maps</a>
-        `)
+            <div style="font-weight:600">${name}</div>
+            <div style="font-size:13px">${addr}</div>
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}"
+               target="_blank"
+               style="font-size:12px;color:#1a73e8;">View on Google Maps</a>
+          `)
 
           infoWindow.open({ map, anchor: marker })
         }
@@ -182,7 +162,7 @@ async function initMap() {
     )
   })
 
-  // 지도 클릭 → 클릭한 좌표로 업데이트
+  // 지도 클릭 → 새 좌표
   map.addListener('click', (e: google.maps.MapMouseEvent) => {
     if (!e.latLng)
       return
@@ -190,37 +170,33 @@ async function initMap() {
     const lat = e.latLng.lat()
     const lng = e.latLng.lng()
 
-    if (!marker) {
-      marker = new AdvancedMarkerElement({ map, position: e.latLng })
-    }
-    else {
-      marker.map = map
-      marker.position = e.latLng
-    }
+    marker.position = e.latLng
 
-    geocoder.geocode({ location: e.latLng, language: 'en' }, (results, status) => {
-      if (status === 'OK' && results?.[0]) {
-        const fullAddress = results[0].formatted_address
+    geocoder.geocode(
+      { location: e.latLng, language: 'en' },
+      (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+        if (status === 'OK' && results?.[0]) {
+          const addr = results[0].formatted_address
 
-        const shortAddr = extractCityCountry(
-          results[0].address_components.map(c => ({
-            longText: c.long_name,
-            types: c.types,
-          })),
-        )
+          const shortAddr = extractCityCountry(
+            results[0].address_components.map(c => ({
+              longText: c.long_name,
+              types: c.types,
+            })),
+          )
 
-        currentLat.value = lat
-        currentLng.value = lng
-        currentAddress.value = shortAddr
-        searchText.value = fullAddress
-      }
-    })
+          currentLat.value = lat
+          currentLng.value = lng
+          currentAddress.value = shortAddr
+          searchText.value = addr
+        }
+      },
+    )
   })
 
   isMapInitialized.value = true
 }
 
-// dialog 열릴 때 map load
 watch(dialog, async opened => {
   if (!opened) {
     isMapInitialized.value = false
@@ -228,7 +204,7 @@ watch(dialog, async opened => {
     return
   }
 
-  if (opened && !isMapInitialized.value) {
+  if (!isMapInitialized.value) {
     await nextTick()
     await initMap()
   }
@@ -236,7 +212,6 @@ watch(dialog, async opened => {
 
 const isSelecting = ref(false)
 
-// 자동완성 입력
 async function handleInput(val: string | null | undefined) {
   if (isSelecting.value)
     return
@@ -261,7 +236,7 @@ async function handleInput(val: string | null | undefined) {
     sessionToken: autocompleteToken,
   })
 
-  suggestions.value = (result.suggestions || []).map(s => ({
+  suggestions.value = (result.suggestions || []).map((s: any) => ({
     text: s.placePrediction?.text?.text || '',
     placeId: s.placePrediction?.placeId || '',
   }))
@@ -269,7 +244,6 @@ async function handleInput(val: string | null | undefined) {
   showSuggestions.value = suggestions.value.length > 0
 }
 
-// 자동완성 선택 (검색 선택한 경우 Google 기본 InfoWindow 사용 → 우리는 건드리지 않음)
 async function handleSelectSuggestion(text: string, placeId: string) {
   isSelecting.value = true
   showSuggestions.value = false
@@ -299,8 +273,6 @@ async function handleSelectSuggestion(text: string, placeId: string) {
   map.setCenter(loc)
   map.setZoom(16)
   marker.position = loc
-
-  // 검색 선택 시 InfoWindow는 Google 기본 창만 사용함
 
   currentLat.value = loc.lat()
   currentLng.value = loc.lng()
@@ -419,44 +391,51 @@ function handleConfirm() {
   height: 480px;
   border: 1px solid rgba(0 0 0 / 10%);
 }
+
 .map-wrapper {
   position: relative !important;
   overflow: visible !important;
 }
+
 #map-search-overlay {
   position: absolute;
   z-index: 30;
-  width: 340px;
   top: 20px;
   left: 20px;
+  width: 340px;
 }
+
 .search-input {
   background-color: white !important;
   border-radius: 8px;
   height: 44px;
   box-shadow: 0 2px 6px rgba(0 0 0 / 15%);
 }
+
 .autocomplete-list {
   position: absolute;
   z-index: 50;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid rgba(0 0 0 / 12%);
-  box-shadow: 0 4px 12px rgba(0 0 0 / 20%);
-  max-height: 220px;
-  overflow-y: auto;
-  width: 100%;
   top: 48px;
   left: 0;
+  width: 100%;
+  max-height: 220px;
+  overflow-y: auto;
+
+  background: white;
+  border: 1px solid rgba(0 0 0 / 12%);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0 0 0 / 20%);
 }
+
 :deep(.v-overlay__scrim) {
   backdrop-filter: none !important;
   background-color: rgba(0, 0, 0, 0.45) !important;
 }
+
 .dialog-card {
+  z-index: 10000 !important;
   background-color: white !important;
   opacity: 1 !important;
   backdrop-filter: none !important;
-  z-index: 10000 !important;
 }
 </style>
