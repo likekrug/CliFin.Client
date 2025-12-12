@@ -60,8 +60,8 @@ watch(
 const sectionTitle = computed(() => {
   switch (props.category) {
     case 'C1': return 'Asset Characteristics'
-    case 'C3': return 'Market Conditions'
-    case 'C4': return 'Financing Terms & Tax'
+    case 'C2': return 'Market Conditions'
+    case 'C3': return 'Financing Terms & Tax'
     default: return 'Information'
   }
 })
@@ -92,7 +92,7 @@ const infoData = computed(() => {
         },
       ]
 
-    case 'C3':
+    case 'C2':
       return [
         {
           title: 'Revenue',
@@ -112,7 +112,7 @@ const infoData = computed(() => {
         },
       ]
 
-    case 'C4':
+    case 'C3':
       return [
         {
           title: 'Financial Terms',

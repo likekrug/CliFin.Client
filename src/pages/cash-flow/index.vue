@@ -1,20 +1,84 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+
 import CashFlowReportCard from '@/views/pages/cash-flow/CashFlowReportCard.vue'
 import EChart from '@/views/pages/cash-flow/EChart.vue'
 import ProjectList from '@/views/pages/cash-flow/ProjectList.vue'
 
-// ----------------------
-// 🔹 프로젝트 리스트 데이터
-// ----------------------
-const projects = ref([
-  { id: 1, name: 'AAAAAAAAAAAAAAAAAAAAAAA', type: 'Coal', location: '53.339688, -6.236688' },
-  { id: 2, name: 'Project name', type: 'Asset', location: 'Latitude, Longitude' },
-  { id: 3, name: 'Project name', type: 'Asset', location: 'Latitude, Longitude' },
-  { id: 4, name: 'Project name', type: 'Asset', location: 'Latitude, Longitude' },
-])
+import { useProjectStore } from '@/stores/project.store'
+import { apiProject } from '@/api/project'
+import type { Project } from '@/types/project.types'
 
-const selectedProject = ref(projects.value[0])
+// ----------------------
+// 🔹 Store
+// ----------------------
+const projectStore = useProjectStore()
+
+onMounted(() => {
+  projectStore.init()
+})
+
+// ----------------------
+// 🔹 프로젝트 목록 (store)
+// ----------------------
+const projects = computed(() => projectStore.sortedProjects)
+
+// ----------------------
+// 🔹 선택된 프로젝트
+// ----------------------
+const selectedProject = ref<Project | null>(null)
+
+// 최초 자동 선택
+watch(
+  projects,
+  list => {
+    if (!selectedProject.value && list.length > 0)
+      selectedProject.value = list[0]
+  },
+  { immediate: true },
+)
+
+// ----------------------
+// 🔹 API 호출 (evaluate)
+// ----------------------
+const evaluateProject = async (project: Project) => {
+  const payload = {
+    projectId: project.id,
+    projectName: project.name,
+    assetType: project.assetType,
+    location: {
+      lat: project.location.lat,
+      lng: project.location.lng,
+    },
+    model: project.model,
+  }
+
+  try {
+    const res = await apiProject.evaluate(payload)
+
+    console.log('[evaluate result]', res.data)
+
+    // TODO:
+    // - 결과를 store에 저장
+    // - CashFlowReportCard / EChart에 전달
+  }
+  catch (err) {
+    console.error('[evaluate error]', err)
+  }
+}
+
+// ----------------------
+// 🔹 선택 프로젝트 변경 시 API 호출
+// ----------------------
+watch(
+  selectedProject,
+  project => {
+    if (!project)
+      return
+    evaluateProject(project)
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -38,65 +102,19 @@ const selectedProject = ref(projects.value[0])
       <VRow>
         <!-- 상단: 보고서 -->
         <VCol cols="12">
-          <CashFlowReportCard />
+          <CashFlowReportCard
+            v-if="selectedProject"
+            :project="selectedProject"
+          />
         </VCol>
-        <!-- 상단: 보고서 -->
-        <!--
-          <VCol cols="12">
-          <CashFlowReport :project="selectedProject" />
-          </VCol>
-        -->
 
-        <!-- 하단: 그래프 -->
-
-        <!--
-          <VCol cols="12">
-          <CashFlowChart :project="selectedProject" />
-          </VCol>
-        -->
-
-        <!-- 하단: 그래프2 라인 그래프 -->
-
-        <!--
-          <VCol cols="12">
-          <CashFlowChart2 />
-          </VCol>
-        -->
-
-        <!-- 2차트 2 개 분리 한것 -->
-        <!--
-          <VCol cols="12">
-          <CashFlowChart3 />
-          </VCol>
-        -->
-
-        <!-- <VCol cols="12"> -->
-        <!-- <CashFlowPlotly /> -->
-
+        <!-- 하단: 차트 -->
         <VCol cols="12">
-          <EChart />
+          <EChart
+            v-if="selectedProject"
+            :project="selectedProject"
+          />
         </VCol>
-
-        <!--
-          <VCol cols="12">
-          <TestChart />
-          </VCol>
-        -->
-
-        <!-- 하단: 제미나이 -->
-        <!--
-          <VCol cols="12">
-          <CashFlowChartJM />
-          </VCol>
-        -->
-
-        <!-- 하단: 그래프2 chart js -->
-        <!--
-          <VCol cols="12">
-          <CashFlowChartJS />
-          </VCol>
-        -->
-        <!--  -->
       </VRow>
     </VCol>
   </VRow>

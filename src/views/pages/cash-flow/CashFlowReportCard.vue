@@ -17,13 +17,13 @@ const logisticData = ref([
       { value: '1.2x / 6 months (Y)', label: 'EOD threshold / DSRA', isMain: false, showBelow: true },
     ],
     isHover: false,
-    hasDrawer: true, // ← ⭐ 첫 번째 카드만 drawer on
+    hasDrawer: true, // ←  첫 번째 카드만 drawer on
   },
 
   {
     icon: 'ri-line-chart-line',
     color: 'success',
-    title: 'Valation Summary',
+    title: 'Valuation Summary',
     items: [
       { value: '14.2%', label: 'Equity IRR', isMain: true, showBelow: true },
       { value: '$5,430,000', label: 'Equity NPV', isMain: false, showBelow: true },

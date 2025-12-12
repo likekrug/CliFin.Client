@@ -17,3 +17,14 @@ export interface Project {
 
   createdAt: string
 }
+
+export interface EvaluatePayload {
+  projectId: string
+  projectName?: string
+  assetType: string
+  location: {
+    lat: number
+    lng: number
+  }
+  model: Record<string, number | boolean | null>
+}
