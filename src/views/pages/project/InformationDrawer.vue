@@ -5,7 +5,7 @@ import { useDisplay } from 'vuetify'
 
 interface Props {
   modelValue: boolean
-  category: 'C1' | 'C3' | 'C4'
+  category: 'C1' | 'C2' | 'C3'
   assetType: string
 }
 

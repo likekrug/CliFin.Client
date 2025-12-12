@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { nanoid } from 'nanoid'
+
 import InformationDrawer from './InformationDrawer.vue'
 import MapSearchDialog from './MapSearchDialog.vue'
 
 import { useAssetStore } from '@/stores/asset.store'
 import { useProjectDefaultStore } from '@/stores/projectDefault.store'
+import { useProjectStore } from '@/stores/project.store'
 
 import type { ProjectDefaultData } from '@/types/projectDefault.types'
+import type { Project } from '@/types/project.types'
 import { getCategories, getGroups } from '@/utils/projectDefault.helper'
 
 // ------------------------
@@ -14,6 +18,7 @@ import { getCategories, getGroups } from '@/utils/projectDefault.helper'
 // ------------------------
 const assetStore = useAssetStore()
 const projectDefaultStore = useProjectDefaultStore()
+const projectStore = useProjectStore()
 
 assetStore.load()
 
@@ -21,21 +26,25 @@ assetStore.load()
 // 기본 Project 정보
 // ------------------------
 const projectName = ref('')
+const projectNameError = ref('')
+
 const selectedType = ref<keyof ProjectDefaultData>('coal')
 
 // flat model (itemCode → value)
-const model = ref<Record<string, any>>({})
+const model = ref<Record<string, number | boolean | null>>({})
 
 // ------------------------
 // 위치 정보
 // ------------------------
 const location = ref<{ lat: number; lng: number } | null>(null)
 const address = ref('')
+const locationError = ref('')
 const dialog = ref(false)
 
 const onSelectLocation = (coords: { lat: number; lng: number; address: string }) => {
   location.value = { lat: coords.lat, lng: coords.lng }
   address.value = coords.address
+  locationError.value = ''
   dialog.value = false
 }
 
@@ -59,7 +68,7 @@ const openDrawer = (category: 'C1' | 'C3' | 'C4') => {
 // default 데이터 로드
 // ------------------------
 onMounted(async () => {
-  await projectDefaultStore.loadDefaultData()
+  await projectDefaultStore.ensureDefaultData()
 
   model.value = projectDefaultStore.buildModel(selectedType.value)
 
@@ -77,7 +86,6 @@ watch(selectedType, newVal => {
   const cats = projectDefaultStore.getDefaultsByType(newVal)?.categories ?? []
 
   Object.keys(expandedMap).forEach(k => delete expandedMap[k])
-
   cats.forEach(cat => {
     expandedMap[cat.categoryCode] = true
   })
@@ -88,6 +96,9 @@ const currentAsset = computed(() => {
   return projectDefaultStore.getDefaultsByType(selectedType.value)
 })
 
+// ------------------------
+// Validation / Formatter
+// ------------------------
 const validateItem = (value: any, item: any) => {
   if (value === null || value === '' || value === undefined)
     return true
@@ -96,7 +107,7 @@ const validateItem = (value: any, item: any) => {
   const min = Number(item.min)
   const max = Number(item.max)
 
-  if (isNaN(num))
+  if (Number.isNaN(num))
     return false
 
   return num >= min && num <= max
@@ -115,6 +126,49 @@ const parseNumber = (value: string) => {
 
   return Number(String(value).replace(/,/g, ''))
 }
+
+// ------------------------
+// Create Project
+// ------------------------
+const onCreateProject = () => {
+  // 에러 초기화
+  projectNameError.value = ''
+  locationError.value = ''
+
+  let hasError = false
+
+  if (!projectName.value.trim()) {
+    projectNameError.value = 'Project name is required'
+    hasError = true
+  }
+
+  if (!location.value) {
+    locationError.value = 'Location is required'
+    hasError = true
+  }
+
+  if (hasError)
+    return
+
+  const project: Project = {
+    id: nanoid(),
+    name: projectName.value,
+    assetType: selectedType.value,
+
+    model: { ...model.value },
+    location: location.value!,
+    address: address.value,
+    createdAt: new Date().toISOString(),
+  }
+
+  projectStore.addProject(project)
+
+  // 초기화 (선택)
+  projectName.value = ''
+  projectNameError.value = ''
+  location.value = null
+  address.value = ''
+}
 </script>
 
 <template>
@@ -131,6 +185,7 @@ const parseNumber = (value: string) => {
 
     <VCardText>
       <VRow class="align-center no-gutters">
+        <!-- Project Name -->
         <VCol
           cols="12"
           md="4"
@@ -139,9 +194,13 @@ const parseNumber = (value: string) => {
             v-model="projectName"
             label="Project Name"
             density="comfortable"
+            :error="!!projectNameError"
+            :error-messages="projectNameError"
+            @update:model-value="projectNameError = ''"
           />
         </VCol>
 
+        <!-- Asset Type -->
         <VCol
           cols="12"
           md="5"
@@ -166,6 +225,7 @@ const parseNumber = (value: string) => {
           </VRadioGroup>
         </VCol>
 
+        <!-- Create -->
         <VCol
           cols="12"
           md="3"
@@ -174,6 +234,7 @@ const parseNumber = (value: string) => {
           <VBtn
             color="primary"
             class="text-end py-0"
+            @click="onCreateProject"
           >
             Create Project
           </VBtn>
@@ -233,6 +294,8 @@ const parseNumber = (value: string) => {
                 readonly
                 variant="outlined"
                 density="comfortable"
+                :error="!!locationError"
+                :error-messages="locationError"
               />
             </VCol>
           </VRow>

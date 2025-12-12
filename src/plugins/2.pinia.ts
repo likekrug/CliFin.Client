@@ -1,4 +1,6 @@
+// src/plugins/2.pinia.ts
 import { createPinia } from 'pinia'
+
 import type { App } from 'vue'
 
 export const store = createPinia()
