@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useDisplay } from 'vuetify'
+import { useScenarioStore } from '@/stores/scenario.store'
 
-const emit = defineEmits(['changeTab'])
+const emit = defineEmits(['change-tab'])
+const scenarioStore = useScenarioStore()
 
 /* -------------------------------
  🔹 Scenario Section
@@ -120,8 +122,42 @@ const { mdAndUp } = useDisplay()
 /* -------------------------------
  🔹 View Results Event
 -------------------------------- */
-const onViewResults = () => {
-  emit('changeTab', 'Result')
+const onViewResults = async () => {
+  try {
+    console.log('🚀 Result View 버튼 클릭 - API 호출 시작')
+    
+    // API 요청 데이터 구성
+    const requestData = {
+      baseline: baselineChecked.value,
+      scenarios: selectedScenarios.value,
+      selectedProjects: selectedSummary.value.map(project => ({
+        id: project.id,
+        name: project.name,
+        type: project.type.toLowerCase(), // 'Coal' -> 'coal'
+        location: project.location,
+        riskFactors: selectedRiskFactors.value[project.id] || []
+      }))
+    }
+    
+    console.log('📤 요청 데이터:', requestData)
+    
+    // Store를 통해 API 호출
+    const result = await scenarioStore.analyzeScenarios(requestData)
+    
+    if (result.success) {
+      console.log('✅ 시나리오 분석 완료, Result 탭으로 이동')
+    } else {
+      console.warn('⚠️ 시나리오 분석 실패, 기본 데이터로 Result 탭 이동:', result.error)
+    }
+    
+    // 성공/실패와 관계없이 Result 탭으로 이동
+    emit('change-tab', 'Result')
+    
+  } catch (error) {
+    console.error('❌ API 호출 중 예외 발생:', error)
+    // 오류 발생해도 Result 탭으로 이동
+    emit('change-tab', 'Result')
+  }
 }
 </script>
 
@@ -357,6 +393,7 @@ const onViewResults = () => {
       <VBtn
         color="primary"
         class="text-end py-0"
+        @click="onViewResults"
       >
         Result View
       </VBtn>

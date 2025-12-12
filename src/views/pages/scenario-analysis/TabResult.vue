@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue'
 import ResultReportColor2 from './result/ResultReportColor2.vue'
 import ResultScenarioCharts from './result/ResultScenarioCharts.vue'
 import Riskbreakdown from './result/Riskbreakdown.vue'
 import SelectedScenarioList from './result/SelectedScenarioList.vue'
+import { useScenarioStore } from '@/stores/scenario.store'
 
 /* -----------------------------------
   Types
@@ -16,11 +18,44 @@ interface SummaryItem {
 }
 
 /* -----------------------------------
-  ⭐ Test Data: Selected Scenarios
+  ⭐ Store 연결
 ----------------------------------- */
-const selectedScenarios = ['Baseline', 'SSP126', 'SSP585', 'SSP170']
+const scenarioStore = useScenarioStore()
 
+/* -----------------------------------
+  ⭐ Active Project ID
+----------------------------------- */
 const activeProjectId = ref(1)
+
+/* -----------------------------------
+  ⭐ 현재 선택된 프로젝트의 시나리오 데이터
+----------------------------------- */
+const currentProjectData = computed(() => {
+  const projectId = String(activeProjectId.value)
+  const data = scenarioStore.getScenarioDataByProjectId(projectId)
+  console.log(`📊 프로젝트 ${projectId} 데이터:`, data)
+  return data
+})
+
+/* -----------------------------------
+  ⭐ Dynamic Data: Selected Scenarios from API Only
+----------------------------------- */
+const selectedScenarios = computed(() => {
+  if (scenarioStore.hasData && Object.keys(currentProjectData.value).length > 0) {
+    const scenarios = Object.keys(currentProjectData.value)
+    console.log('🎯 Dynamic scenarios from API:', scenarios)
+    return scenarios
+  }
+
+  console.log('⚠️  API 시나리오 없음 - 빈 배열 반환')
+  return []
+})
+
+// 프로젝트 변경 시 로그
+watch(activeProjectId, (newId) => {
+  console.log(`🔄 프로젝트 변경: ${newId}`)
+  console.log(`📦 Store 전체 데이터 키:`, Object.keys(scenarioStore.scenarioDataByProject))
+})
 
 /* -----------------------------------
   ⭐ Tabs (Summary / Breakdown)
@@ -28,81 +63,39 @@ const activeProjectId = ref(1)
 const activeTab = ref('summary')
 
 /* -----------------------------------
-  ⭐ Test Data: Selected Projects Summary
+  ⭐ Dynamic Data: Selected Projects Summary (API에서 가져오기)
 ----------------------------------- */
-const selectedSummary: SummaryItem[] = [
-  {
+const selectedSummary = computed(() => {
+  const lastRequestData = scenarioStore.getLastRequestData?.()
+  if (lastRequestData?.selectedProjects) {
+    console.log('🎯 Store에서 실제 선택된 프로젝트 사용:', lastRequestData.selectedProjects)
+    return lastRequestData.selectedProjects.map((project: any) => ({
+      id: project.id,
+      name: `${project.type.charAt(0).toUpperCase() + project.type.slice(1)} Power Plant`,
+      type: project.type,
+      location: "Korea",
+      risks: project.riskFactors || []
+    }))
+  }
+
+  console.log('⚠️  Store에 프로젝트 정보 없음 - 임시 프로젝트 사용')
+  return [{
     id: 1,
-    name: 'Coal Power Plant Alpha',
-    type: 'Coal',
-    location: '53.339688, -6.236688',
-    risks: ['Extreme Weather', 'Air Temperature'],
-  },
-  {
-    id: 2,
-    name: 'Gas Combined Cycle',
-    type: 'Natural Gas',
-    location: '37.7749, -122.4194',
-    risks: ['Extreme Weather'],
-  },
-]
+    name: "Coal Power Plant",
+    type: "Coal",
+    location: "Korea",
+    risks: ["EW", "AT"]
+  }]
+})
 
 /* -----------------------------------
-  ⭐ Scenario Data
+  ⭐ Scenario Data - 현재 선택된 프로젝트의 데이터 사용
 ----------------------------------- */
-const scenarioData = {
-  Baseline: [
-    { label: 'Debt amount', value: '$12,000,000' },
-    { label: 'Tenor / Margin', value: '10 Yr / 3.5%' },
-    { label: 'EOD threshold / DSRA', value: '1.20x / 6 months (Y)' },
-    { label: 'Equity IRR', value: '14.2%' },
-    { label: 'Equity NPV', value: '$5,430,000' },
-    { label: 'Payback period equity', value: '8.5 Yr' },
-    { label: 'Min DSCR', value: '1.35' },
-    { label: 'LLCR', value: '1.65' },
-    { label: 'Default year', value: '2031' },
-    { label: 'DSRA trigger', value: 'Y' },
-  ],
-  SSP126: [
-    { label: 'Debt amount', value: '$11,800,000' },
-    { label: 'Tenor / Margin', value: '10 Yr / 3.6%' },
-    { label: 'EOD threshold / DSRA', value: '1.18x / 6 months (Y)' },
-    { label: 'Equity IRR', value: '13.1%' },
-    { label: 'Equity NPV', value: '$4,920,000' },
-    { label: 'Payback period equity', value: '9.1 Yr' },
-    { label: 'Min DSCR', value: '1.28' },
-    { label: 'LLCR', value: '1.55' },
-    { label: 'Default year', value: '2030' },
-    { label: 'DSRA trigger', value: 'Y' },
-  ],
-  SSP585: [
-    { label: 'Debt amount', value: '$11,200,000' },
-    { label: 'Tenor / Margin', value: '10 Yr / 4.0%' },
-    { label: 'EOD threshold / DSRA', value: '1.15x / 6 months (N)' },
-    { label: 'Equity IRR', value: '11.5%' },
-    { label: 'Equity NPV', value: '$4,200,000' },
-    { label: 'Payback period equity', value: '10.2 Yr' },
-    { label: 'Min DSCR', value: '1.20' },
-    { label: 'LLCR', value: '1.43' },
-    { label: 'Default year', value: '2029' },
-    { label: 'DSRA trigger', value: 'N' },
-  ],
-  SSP170: [
-    { label: 'Debt amount', value: '$10,900,000' },
-    { label: 'Tenor / Margin', value: '10 Yr / 4.3%' },
-    { label: 'EOD threshold / DSRA', value: '1.12x / 6 months (N)' },
-    { label: 'Equity IRR', value: '10.7%' },
-    { label: 'Equity NPV', value: '$3,880,000' },
-    { label: 'Payback period equity', value: '10.8 Yr' },
-    { label: 'Min DSCR', value: '1.15' },
-    { label: 'LLCR', value: '1.38' },
-    { label: 'Default year', value: '2028' },
-    { label: 'DSRA trigger', value: 'N' },
-  ],
-}
+const scenarioData = computed(() => currentProjectData.value)
 </script>
 
 <template>
+  <!-- 기존 템플릿 코드는 그대로 유지 -->
   <VRow class="tab-result-layout">
     <!-- LEFT: Scenario Summary -->
     <VCol
@@ -154,6 +147,7 @@ const scenarioData = {
               <ResultScenarioCharts
                 v-if="activeTab === 'summary'"
                 :selected-scenarios="selectedScenarios"
+                :scenario-data="scenarioData"
               />
             </VCol>
           </VRow>
@@ -163,7 +157,10 @@ const scenarioData = {
         <!-- ⭐ BREAKDOWN TAB 화면 -->
         <!-- ======================= -->
         <VWindowItem value="breakdown">
-          <Riskbreakdown :selected-scenarios="selectedScenarios" />
+          <Riskbreakdown
+            :selected-scenarios="selectedScenarios"
+            :scenario-data="scenarioData"
+          />
         </VWindowItem>
       </VWindow>
     </VCol>

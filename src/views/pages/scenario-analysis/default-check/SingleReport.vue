@@ -35,8 +35,8 @@ const mergedRows = computed(() => {
 const scenarioKeyMap: Record<string, string> = {
   Baseline: 'baseline',
   SSP126: 'ssp126',
+  SSP370: 'ssp370',
   SSP585: 'ssp585',
-  SSP170: 'ssp370',
 }
 
 /* ----------------------------------------

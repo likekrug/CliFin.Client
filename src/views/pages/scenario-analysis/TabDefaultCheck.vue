@@ -1,46 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 import MultiMap from './default-check/MultiMap.vue'
 import SingleChart from './default-check/SingleChart.vue'
 import SingleReport from './default-check/SingleReport.vue'
 import SelectedScenarioList from './result/SelectedScenarioList.vue'
-
-/* -----------------------------------
-  30-year Breakdown Data
------------------------------------ */
-const scenarioBreakdonwData = [
-  { year: 2025, baseline: 0.82, ssp126: 0.93, ssp370: 1.12, ssp585: 0.97 },
-  { year: 2026, baseline: 1.05, ssp126: 1.12, ssp370: 0.98, ssp585: 1.14 },
-  { year: 2027, baseline: 0.91, ssp126: 1.08, ssp370: 1.21, ssp585: 1.03 },
-  { year: 2028, baseline: 0.78, ssp126: 1.02, ssp370: 0.95, ssp585: 1.18 },
-  { year: 2029, baseline: 1.02, ssp126: 0.89, ssp370: 1.17, ssp585: 1.11 },
-  { year: 2030, baseline: 0.87, ssp126: 1.09, ssp370: 0.91, ssp585: 1.07 },
-  { year: 2031, baseline: 1.12, ssp126: 1.14, ssp370: 1.08, ssp585: 0.99 },
-  { year: 2032, baseline: 0.94, ssp126: 0.97, ssp370: 1.23, ssp585: 1.15 },
-  { year: 2033, baseline: 1.08, ssp126: 1.01, ssp370: 0.97, ssp585: 0.92 },
-  { year: 2034, baseline: 0.79, ssp126: 1.16, ssp370: 1.04, ssp585: 1.21 },
-  { year: 2035, baseline: 0.88, ssp126: 1.06, ssp370: 1.18, ssp585: 0.94 },
-  { year: 2036, baseline: 1.03, ssp126: 1.03, ssp370: 0.93, ssp585: 1.19 },
-  { year: 2037, baseline: 1.11, ssp126: 0.92, ssp370: 1.05, ssp585: 1.07 },
-  { year: 2038, baseline: 0.97, ssp126: 1.13, ssp370: 1.12, ssp585: 0.88 },
-  { year: 2039, baseline: 0.84, ssp126: 1.18, ssp370: 0.99, ssp585: 1.23 },
-  { year: 2040, baseline: 1.06, ssp126: 0.95, ssp370: 1.14, ssp585: 1.09 },
-  { year: 2041, baseline: 0.93, ssp126: 1.12, ssp370: 1.01, ssp585: 1.15 },
-  { year: 2042, baseline: 1.15, ssp126: 1.07, ssp370: 1.09, ssp585: 0.91 },
-  { year: 2043, baseline: 1.02, ssp126: 1.15, ssp370: 0.96, ssp585: 1.12 },
-  { year: 2044, baseline: 0.89, ssp126: 0.98, ssp370: 1.13, ssp585: 0.96 },
-  { year: 2045, baseline: 1.09, ssp126: 1.04, ssp370: 0.92, ssp585: 1.17 },
-  { year: 2046, baseline: 0.95, ssp126: 1.09, ssp370: 1.16, ssp585: 1.02 },
-  { year: 2047, baseline: 0.86, ssp126: 1.02, ssp370: 1.08, ssp585: 1.21 },
-  { year: 2048, baseline: 1.04, ssp126: 0.97, ssp370: 1.19, ssp585: 0.99 },
-  { year: 2049, baseline: 1.12, ssp126: 1.15, ssp370: 0.95, ssp585: 1.08 },
-  { year: 2050, baseline: 1.01, ssp126: 1.08, ssp370: 1.11, ssp585: 0.94 },
-  { year: 2051, baseline: 0.98, ssp126: 1.03, ssp370: 1.17, ssp585: 1.13 },
-  { year: 2052, baseline: 0.83, ssp126: 1.12, ssp370: 1.05, ssp585: 1.07 },
-  { year: 2053, baseline: 1.14, ssp126: 1.09, ssp370: 0.99, ssp585: 1.18 },
-  { year: 2054, baseline: 0.92, ssp126: 0.96, ssp370: 1.14, ssp585: 1.02 },
-]
+import { useScenarioStore } from '@/stores/scenario.store'
 
 /* -----------------------------------
   Types
@@ -54,94 +19,125 @@ interface SummaryItem {
 }
 
 /* -----------------------------------
-  Selected Scenarios
+  ⭐ Store 연결
 ----------------------------------- */
-const selectedScenarios = ['Baseline', 'SSP126', 'SSP585', 'SSP170']
+const scenarioStore = useScenarioStore()
 
 /* -----------------------------------
   ⭐ Single / Multi 선택 상태
 ----------------------------------- */
-const activeProjectId = ref<number | null>(1)
+const activeProjectId = ref<number | null>(null)
 const activeProjectIds = ref<number[]>([])
 
 /* -----------------------------------
   Tabs
 ----------------------------------- */
-const activeTab = ref('summary')
+const activeTab = ref('single')
 
 /* -----------------------------------
-  Project List
+  ⭐ Dynamic Data: Project List from Store
 ----------------------------------- */
-const selectedSummary: SummaryItem[] = [
-  {
-    id: 1,
-    name: 'Coal Power Plant Alpha',
-    type: 'Coal',
-    location: '53.339688, -6.236688',
-    risks: ['Extreme Weather', 'Air Temperature'],
-  },
-  {
-    id: 2,
-    name: 'Gas Combined Cycle',
-    type: 'Natural Gas',
-    location: '37.7749, -122.4194',
-    risks: ['Extreme Weather'],
-  },
-]
+const selectedSummary = computed<SummaryItem[]>(() => {
+  const lastRequestData = scenarioStore.getLastRequestData?.()
+  if (lastRequestData?.selectedProjects) {
+    return lastRequestData.selectedProjects.map((project: any) => ({
+      id: project.id,
+      name: project.name || `${project.type.charAt(0).toUpperCase() + project.type.slice(1)} Power Plant`,
+      type: project.type,
+      location: project.location || 'Korea',
+      risks: project.riskFactors || []
+    }))
+  }
+  return []
+})
+
+// 프로젝트 목록이 로드되면 첫 번째 프로젝트 자동 선택
+watch(selectedSummary, (projects) => {
+  console.log('📋 [DefaultCheck] selectedSummary 변경:', projects)
+  if (projects.length > 0 && activeProjectId.value === null) {
+    activeProjectId.value = projects[0].id
+    console.log('✅ [DefaultCheck] 첫 프로젝트 자동 선택:', projects[0].id)
+  }
+}, { immediate: true })
+
+// activeProjectId 변경 추적
+watch(activeProjectId, (newId) => {
+  console.log('🔄 [DefaultCheck] activeProjectId 변경:', newId)
+  console.log('📦 [DefaultCheck] currentProjectData:', currentProjectData.value)
+  console.log('📊 [DefaultCheck] dscrChartData:', dscrChartData.value)
+})
 
 /* -----------------------------------
-  Summary Detail Data
+  ⭐ 현재 선택된 프로젝트의 시나리오 데이터
 ----------------------------------- */
-const scenarioData = {
-  Baseline: [
-    { label: 'Debt amount', value: '$12,000,000' },
-    { label: 'Tenor / Margin', value: '10 Yr / 3.5%' },
-    { label: 'EOD threshold / DSRA', value: '1.20x / 6 months (Y)' },
-    { label: 'Equity IRR', value: '14.2%' },
-    { label: 'Equity NPV', value: '$5,430,000' },
-    { label: 'Payback period equity', value: '8.5 Yr' },
-    { label: 'Min DSCR', value: '1.35' },
-    { label: 'LLCR', value: '1.65' },
-    { label: 'Default year', value: '2031' },
-    { label: 'DSRA trigger', value: 'Y' },
-  ],
-  SSP126: [
-    { label: 'Debt amount', value: '$11,800,000' },
-    { label: 'Tenor / Margin', value: '10 Yr / 3.6%' },
-    { label: 'EOD threshold / DSRA', value: '1.18x / 6 months (Y)' },
-    { label: 'Equity IRR', value: '13.1%' },
-    { label: 'Equity NPV', value: '$4,920,000' },
-    { label: 'Payback period equity', value: '9.1 Yr' },
-    { label: 'Min DSCR', value: '1.28' },
-    { label: 'LLCR', value: '1.55' },
-    { label: 'Default year', value: '2030' },
-    { label: 'DSRA trigger', value: 'Y' },
-  ],
-  SSP585: [
-    { label: 'Debt amount', value: '$11,200,000' },
-    { label: 'Tenor / Margin', value: '10 Yr / 4.0%' },
-    { label: 'EOD threshold / DSRA', value: '1.15x / 6 months (N)' },
-    { label: 'Equity IRR', value: '11.5%' },
-    { label: 'Equity NPV', value: '$4,200,000' },
-    { label: 'Payback period equity', value: '10.2 Yr' },
-    { label: 'Min DSCR', value: '1.20' },
-    { label: 'LLCR', value: '1.43' },
-    { label: 'Default year', value: '2029' },
-    { label: 'DSRA trigger', value: 'N' },
-  ],
-  SSP170: [
-    { label: 'Debt amount', value: '$10,900,000' },
-    { label: 'Tenor / Margin', value: '10 Yr / 4.3%' },
-    { label: 'EOD threshold / DSRA', value: '1.12x / 6 months (N)' },
-    { label: 'Equity IRR', value: '10.7%' },
-    { label: 'Equity NPV', value: '$3,880,000' },
-    { label: 'Payback period equity', value: '10.8 Yr' },
-    { label: 'Min DSCR', value: '1.15' },
-    { label: 'LLCR', value: '1.38' },
-    { label: 'Default year', value: '2028' },
-    { label: 'DSRA trigger', value: 'N' },
-  ],
-}
+const currentProjectData = computed(() => {
+  if (activeProjectId.value === null) return {}
+  const projectId = String(activeProjectId.value)
+  return scenarioStore.getScenarioDataByProjectId(projectId)
+})
+
+/* -----------------------------------
+  ⭐ Dynamic Data: Selected Scenarios from API
+----------------------------------- */
+const selectedScenarios = computed(() => {
+  if (scenarioStore.hasData && Object.keys(currentProjectData.value).length > 0) {
+    return Object.keys(currentProjectData.value)
+  }
+  return []
+})
+
+/* -----------------------------------
+  ⭐ DSCR Data for Chart (30년)
+----------------------------------- */
+const dscrChartData = computed(() => {
+  const result: Record<string, number[]> = {}
+
+  for (const scenario of selectedScenarios.value) {
+    const scenarioData = currentProjectData.value[scenario]
+    if (scenarioData?.chartData?.dscr) {
+      result[scenario] = scenarioData.chartData.dscr
+    }
+  }
+
+  return result
+})
+
+/* -----------------------------------
+  ⭐ DSCR Data for Table (30년 by Year)
+----------------------------------- */
+const dscrTableData = computed(() => {
+  const startYear = 2025
+  const rows: Record<string, number>[] = []
+
+  for (let i = 0; i < 30; i++) {
+    const row: Record<string, number> = { year: startYear + i }
+
+    for (const scenario of selectedScenarios.value) {
+      const scenarioData = currentProjectData.value[scenario]
+      if (scenarioData?.chartData?.dscr?.[i] !== undefined) {
+        // scenario key를 소문자로 변환 (Baseline -> baseline, SSP126 -> ssp126)
+        const key = scenario.toLowerCase()
+        row[key] = Math.round(scenarioData.chartData.dscr[i] * 100) / 100
+      }
+    }
+
+    rows.push(row)
+  }
+
+  return rows
+})
+
+/* -----------------------------------
+  ⭐ Multi Project용 프로젝트 목록 (위치 정보 포함)
+----------------------------------- */
+const multiProjectList = computed(() => {
+  return selectedSummary.value.map(project => ({
+    id: project.id,
+    name: project.name,
+    type: project.type,
+    location: project.location
+  }))
+})
 
 /* -----------------------------------
   Tab change
@@ -150,10 +146,10 @@ const handleTabChange = (v: unknown) => {
   const tab = v as string
 
   if (tab === 'single')
-    activeProjectId.value = activeProjectIds.value[0] ?? null
+    activeProjectId.value = activeProjectIds.value[0] ?? selectedSummary.value[0]?.id ?? null
 
   if (tab === 'multi')
-    activeProjectIds.value = selectedSummary.map(p => p.id)
+    activeProjectIds.value = selectedSummary.value.map(p => p.id)
 }
 </script>
 
@@ -202,14 +198,24 @@ const handleTabChange = (v: unknown) => {
       <VWindow v-model="activeTab">
         <!-- SUMMARY -->
         <VWindowItem value="single">
-          <VRow>
+          <!-- 데이터가 없을 때 안내 메시지 -->
+          <VAlert
+            v-if="!scenarioStore.hasData || selectedScenarios.length === 0"
+            type="info"
+            variant="tonal"
+            class="mb-4"
+          >
+            시나리오 분석을 먼저 실행해주세요. Create Scenario 탭에서 프로젝트를 선택하고 분석을 실행하면 결과가 표시됩니다.
+          </VAlert>
+
+          <VRow v-else>
             <VCol
               cols="12"
               md="6"
             >
               <SingleChart
                 :selected-scenarios="selectedScenarios"
-                :scenario-data="scenarioData"
+                :dscr-data="dscrChartData"
               />
             </VCol>
 
@@ -220,21 +226,24 @@ const handleTabChange = (v: unknown) => {
               <SingleReport
                 :start-year="2025"
                 :selected-scenarios="selectedScenarios"
-                :scenario-data="scenarioBreakdonwData"
+                :scenario-data="dscrTableData"
               />
             </VCol>
           </VRow>
         </VWindowItem>
 
-        <!-- BREAKDOWN -->
+        <!-- MULTI PROJECT -->
         <VWindowItem value="multi">
           <VRow>
             <VCol cols="12">
-              <MultiMap />
-              WindowItem>
-            </vcol>
-          </vrow>
-        </vwindowitem>
+              <MultiMap
+                :projects="multiProjectList"
+                :scenario-data="scenarioStore.scenarioDataByProject"
+                :selected-scenarios="selectedScenarios"
+              />
+            </VCol>
+          </VRow>
+        </VWindowItem>
       </VWindow>
     </VCol>
   </VRow>

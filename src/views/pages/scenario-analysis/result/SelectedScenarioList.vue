@@ -24,8 +24,12 @@ const emit = defineEmits([
   🔹 Single 선택
 =================================================== */
 const selectSingle = (item: SummaryItem) => {
-  if (props.activeId !== item.id)
+  console.log('🖱️ 클릭된 프로젝트:', item.id, item.name)
+  console.log('🔍 현재 activeId:', props.activeId)
+  if (props.activeId !== item.id) {
+    console.log('✅ emit update:activeId', item.id)
     emit('update:activeId', item.id)
+  }
 }
 
 /* ===================================================

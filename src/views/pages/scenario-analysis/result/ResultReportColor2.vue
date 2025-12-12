@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 interface MetricItem {
   label: string
   value: string
@@ -76,21 +78,39 @@ const getColumnColor = (col: string) => {
 }
 
 /* ===============================
-   Group Rows
+   Helper: scenarioData에서 report 배열 가져오기
 ================================ */
-const grouped = sectionOrder.map(section => {
-  const first = props.scenarioData[props.selectedScenarios[0]] || []
+const getReportData = (scenarioName: string): MetricItem[] => {
+  const data = props.scenarioData[scenarioName]
+  // 새 구조: { report: [...], chartData: {...} }
+  if (data?.report) {
+    return data.report
+  }
+  // 기존 구조: [...] (배열 직접)
+  if (Array.isArray(data)) {
+    return data
+  }
+  return []
+}
 
-  const items = first
-    .filter(item => sectionMap[item.label] === section)
-    .map(item => ({
-      label: item.label,
-      values: props.selectedScenarios.map(sc => {
-        return props.scenarioData[sc]?.find(m => m.label === item.label)?.value ?? '-'
-      }),
-    }))
+/* ===============================
+   Group Rows (반응형 computed로 변경)
+================================ */
+const grouped = computed(() => {
+  return sectionOrder.map(section => {
+    const first = getReportData(props.selectedScenarios[0])
 
-  return { section, items }
+    const items = first
+      .filter(item => sectionMap[item.label] === section)
+      .map(item => ({
+        label: item.label,
+        values: props.selectedScenarios.map(sc => {
+          return getReportData(sc)?.find(m => m.label === item.label)?.value ?? '-'
+        }),
+      }))
+
+    return { section, items }
+  })
 })
 </script>
 

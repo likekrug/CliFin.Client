@@ -2,9 +2,36 @@
 <script setup lang="ts">
 import ChartCard from './ChartCard.vue'
 
+interface ChartDataType {
+  revenue_total?: number[]
+  operation_expense?: number[]
+  fuel_expense?: number[]
+  insurance_expense?: number[]
+  property_tax_exp?: number[]
+  debt_service?: number[]
+  cash_flow_to_equity?: number[]
+  dscr?: number[]
+}
+
+interface ScenarioDataType {
+  [key: string]: {
+    report?: any[]
+    chartData?: ChartDataType
+  }
+}
+
 const props = defineProps<{
   selectedScenarios: string[]
+  scenarioData?: ScenarioDataType
 }>()
+
+const getChartData = (scenarioName: string): ChartDataType => {
+  const data = props.scenarioData?.[scenarioName]
+  if (data?.chartData) {
+    return data.chartData
+  }
+  return {}
+}
 </script>
 
 <template>
@@ -14,6 +41,7 @@ const props = defineProps<{
         v-for="sc in selectedScenarios"
         :key="sc"
         :scenario="sc"
+        :chart-data="getChartData(sc)"
       />
     </div>
   </div>

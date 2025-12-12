@@ -1,39 +1,155 @@
 <script setup lang="ts">
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+
+/* ------------------------------
+ 🔹 Props
+------------------------------ */
+const props = defineProps<{
+  projects: Array<{
+    id: number
+    name: string
+    type: string
+    location: string
+  }>
+  scenarioData: Record<string, Record<string, any>> // projectId -> scenario -> data
+  selectedScenarios: string[]
+}>()
 
 const mapRef = ref<HTMLElement | null>(null)
 const map = ref<L.Map | null>(null)
+const markers = ref<L.CircleMarker[]>([])
 
 /* ------------------------------
- 🔹 에너지 타입별 색상
+ 🔹 DSCR 기준 색상
 ------------------------------ */
-const colors: Record<string, string> = {
-  'Solar': '#8BC34A',
-  'Natural Gas': '#D4A017',
-  'Coal': '#333333',
-}
-
-/* ------------------------------
- 🔹 프로젝트 데이터
------------------------------- */
-const projects = [
-  { name: 'Seoul Solar Plant', type: 'Solar', result: 'DEFAULT', lat: 37.5665, lon: 126.978 },
-  { name: 'Tokyo Gas Facility', type: 'Natural Gas', result: 'EOD', lat: 35.6895, lon: 139.6917 },
-  { name: 'Los Angeles Coal Plant', type: 'Coal', result: 'PASS', lat: 34.0522, lon: -118.2437 },
-]
-
 const resultColors: Record<string, string> = {
-  DEFAULT: '#FF4D4D', // 빨강
-  EOD: '#FFB400', // 노랑
-  PASS: '#4CAF50', // 초록
+  DEFAULT: '#FF4D4D', // 빨강 - DSCR <= 1.0
+  EOD: '#FFB400',     // 노랑 - 1.0 < DSCR <= 1.5
+  PASS: '#4CAF50',    // 초록 - DSCR > 1.5
 }
 
+/* ------------------------------
+ 🔹 시나리오 색상
+------------------------------ */
+const scenarioColors: Record<string, string> = {
+  Baseline: '#6C757D',
+  SSP126: '#2196F3',
+  SSP370: '#FFB400',
+  SSP585: '#F44336',
+}
+
+const selectedScenario = ref<string>('Baseline')
+
+/* ------------------------------
+ 🔹 DSCR 상태 판정
+------------------------------ */
+const getDscrStatus = (dscr: number | undefined): string => {
+  if (dscr === undefined || dscr === null) return 'DEFAULT'
+  if (dscr <= 1.0) return 'DEFAULT'
+  if (dscr <= 1.5) return 'EOD'
+  return 'PASS'
+}
+
+/* ------------------------------
+ 🔹 프로젝트별 Min DSCR 가져오기
+------------------------------ */
+const getProjectMinDscr = (projectId: number, scenario: string): number | undefined => {
+  console.log(`🔍 [MultiMap] getProjectMinDscr - projectId: ${projectId}, scenario: ${scenario}`)
+  console.log(`📦 [MultiMap] scenarioData:`, props.scenarioData)
+
+  const projectData = props.scenarioData[String(projectId)]
+  console.log(`📦 [MultiMap] projectData for ${projectId}:`, projectData)
+
+  if (!projectData || !projectData[scenario]) {
+    console.log(`⚠️ [MultiMap] No data for project ${projectId}, scenario ${scenario}`)
+    return undefined
+  }
+
+  const scenarioResult = projectData[scenario]
+  console.log(`📊 [MultiMap] scenarioResult:`, scenarioResult)
+
+  // reportData에서 Min DSCR 찾기
+  if (scenarioResult.reportData) {
+    const minDscrItem = scenarioResult.reportData.find((item: any) => item.label === 'Min DSCR')
+    if (minDscrItem) {
+      console.log(`✅ [MultiMap] Found Min DSCR from reportData: ${minDscrItem.value}`)
+      return parseFloat(minDscrItem.value)
+    }
+  }
+
+  // chartData에서 dscr 배열의 최소값 사용 (0 제외 - Year 0은 의미없는 값)
+  if (scenarioResult.chartData?.dscr?.length > 0) {
+    const validDscr = scenarioResult.chartData.dscr.filter((v: number) => v > 0)
+    if (validDscr.length > 0) {
+      const minDscr = Math.min(...validDscr)
+      console.log(`✅ [MultiMap] Calculated Min DSCR from chartData (excluding 0): ${minDscr}`)
+      return minDscr
+    }
+  }
+
+  console.log(`⚠️ [MultiMap] No DSCR data found`)
+  return undefined
+}
+
+/* ------------------------------
+ 🔹 위치 파싱 (lat, lon)
+------------------------------ */
+const parseLocation = (location: string): [number, number] | null => {
+  if (!location) return null
+  const parts = location.split(',').map(s => parseFloat(s.trim()))
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    return [parts[0], parts[1]]
+  }
+  return null
+}
+
+/* ------------------------------
+ 🔹 마커 업데이트
+------------------------------ */
+const updateMarkers = () => {
+  if (!map.value) return
+
+  // 기존 마커 제거
+  markers.value.forEach(marker => marker.remove())
+  markers.value = []
+
+  // 새 마커 추가
+  props.projects.forEach(project => {
+    const coords = parseLocation(project.location)
+    if (!coords) return
+
+    const minDscr = getProjectMinDscr(project.id, selectedScenario.value)
+    const status = getDscrStatus(minDscr)
+    const color = resultColors[status]
+
+    const marker = L.circleMarker(coords, {
+      radius: 8,
+      color,
+      fillColor: color,
+      fillOpacity: 1,
+      weight: 2,
+    }).addTo(map.value!)
+
+    marker.bindPopup(`
+      <b>${project.name}</b><br>
+      Type: ${project.type}<br>
+      Scenario: ${selectedScenario.value}<br>
+      Min DSCR: ${minDscr?.toFixed(2) ?? 'N/A'}<br>
+      Status: <span style="color:${color};font-weight:bold">${status}</span>
+    `)
+
+    markers.value.push(marker)
+  })
+}
+
+/* ------------------------------
+ 🔹 지도 초기화
+------------------------------ */
 onMounted(async () => {
   await nextTick()
-  if (!mapRef.value)
-    return
+  if (!mapRef.value) return
 
   map.value = L.map(mapRef.value, {
     zoomControl: true,
@@ -45,63 +161,48 @@ onMounted(async () => {
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map.value)
 
-  // 마커 표시
-  projects.forEach(p => {
-    const color = resultColors[p.result]
-
-    const marker = L.circleMarker([p.lat, p.lon], {
-      radius: 6,
-      color,
-      fillColor: color,
-      fillOpacity: 1,
-      weight: 2,
-    }).addTo(map.value!)
-
-    marker.bindPopup(`
-    <b>${p.name}</b><br>
-    Type: ${p.type}<br>
-    Result: ${p.result}
-  `)
-  })
-
   // 범례 추가
   const legend = L.control({ position: 'bottomright' })
-
   legend.onAdd = () => {
     const div = L.DomUtil.create('div', 'legend-container')
-
     div.innerHTML = `
-      <div class="legend-title">Result Status</div>
-      ${Object.entries(resultColors)
-    .map(([key, val]) => `<div class="legend-item"><span class="legend-color" style="background:${val}"></span>${key}</div>`)
-    .join('')}
+      <div class="legend-title">DSCR Status</div>
+      <div class="legend-item"><span class="legend-color" style="background:${resultColors.DEFAULT}"></span>Default (≤1.0)</div>
+      <div class="legend-item"><span class="legend-color" style="background:${resultColors.EOD}"></span>EOD (≤1.5)</div>
+      <div class="legend-item"><span class="legend-color" style="background:${resultColors.PASS}"></span>Pass (>1.5)</div>
     `
-
     return div
   }
   legend.addTo(map.value)
+
+  // 초기 마커 표시
+  updateMarkers()
 })
 
-// 보기 전환
-const setWorldView = () => map.value?.setView([20, 0], 2)
-const setKoreaView = () => map.value?.setView([36.5, 127.8], 7)
-const setTokyoView = () => map.value?.setView([35.6895, 139.6917], 10)
-const setLAView = () => map.value?.setView([34.0522, -118.2437], 10)
-
-const scenarioColors: Record<string, string> = {
-  Baseline: '#6C757D', // gray
-  SSP126: '#2196F3', // blue
-  SSP585: '#F44336', // red
-  SSP170: '#FFB400', // yellow
-}
-
-const selectedScenario = ref<'Baseline' | 'SSP126' | 'SSP585' | 'SSP170'>('Baseline')
-
-watch(selectedScenario, sc => {
-  console.log('선택된 시나리오:', sc)
-
-  // 여기서 지도 업데이트 로직 넣으면 됨
+// 시나리오 변경 시 마커 업데이트
+watch(selectedScenario, () => {
+  updateMarkers()
 })
+
+// props 변경 시 마커 업데이트
+watch(() => [props.projects, props.scenarioData], () => {
+  updateMarkers()
+}, { deep: true })
+
+// 사용 가능한 시나리오 목록
+const availableScenarios = computed(() => {
+  if (props.selectedScenarios.length > 0) {
+    return props.selectedScenarios
+  }
+  return ['Baseline', 'SSP126', 'SSP370', 'SSP585']
+})
+
+// 첫 시나리오로 자동 선택
+watch(availableScenarios, (scenarios) => {
+  if (scenarios.length > 0 && !scenarios.includes(selectedScenario.value)) {
+    selectedScenario.value = scenarios[0]
+  }
+}, { immediate: true })
 </script>
 
 <template>
@@ -111,33 +212,46 @@ watch(selectedScenario, sc => {
     outline
   >
     <VCardTitle>
-      Map
+      Multi Project Map
     </VCardTitle>
 
     <VDivider class="custom-divider" />
-    <!-- 헤더 -->
-    <div class="d-flex align-center gap-2 mb-4 ma-4">
-      <div class="vertical-bar me-2" />
-      <span class="scenario-label"> Scenario :</span>
 
-      <VBtn
-        v-for="sc in Object.keys(scenarioColors)"
-        :key="sc"
-        size="small"
-        :color="selectedScenario === sc ? scenarioColors[sc] : undefined"
-        :variant="selectedScenario === sc ? 'flat' : 'outlined'"
-        :class="{ 'scenario-unselected': selectedScenario !== sc }"
-        @click="selectedScenario = sc"
-      >
-        {{ sc }}
-      </VBtn>
-    </div>
+    <!-- 데이터 없을 때 안내 -->
+    <VAlert
+      v-if="!projects.length"
+      type="info"
+      variant="tonal"
+      class="ma-4"
+    >
+      시나리오 분석을 먼저 실행해주세요.
+    </VAlert>
 
-    <!-- 지도 영역 -->
-    <div
-      ref="mapRef"
-      class="map-area"
-    />
+    <template v-else>
+      <!-- 시나리오 선택 버튼 -->
+      <div class="d-flex align-center gap-2 mb-4 ma-4">
+        <div class="vertical-bar me-2" />
+        <span class="scenario-label">Scenario :</span>
+
+        <VBtn
+          v-for="sc in availableScenarios"
+          :key="sc"
+          size="small"
+          :color="selectedScenario === sc ? scenarioColors[sc] || '#888' : undefined"
+          :variant="selectedScenario === sc ? 'flat' : 'outlined'"
+          :class="{ 'scenario-unselected': selectedScenario !== sc }"
+          @click="selectedScenario = sc"
+        >
+          {{ sc }}
+        </VBtn>
+      </div>
+
+      <!-- 지도 영역 -->
+      <div
+        ref="mapRef"
+        class="map-area"
+      />
+    </template>
   </VCard>
 </template>
 
