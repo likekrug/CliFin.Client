@@ -13,7 +13,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 
 // --------------------------------------------------
-// 🔹 Types
+// 🔹 Types (API figure 그대로)
 // --------------------------------------------------
 interface FigureSeries {
   order: string
@@ -56,7 +56,7 @@ use([
 ])
 
 // --------------------------------------------------
-// 🔹 색상 매핑
+// 🔹 색상 매핑 (id 기준)
 // --------------------------------------------------
 const SERIES_COLOR: Record<string, string> = {
   REV: '#000000',
@@ -70,7 +70,7 @@ const SERIES_COLOR: Record<string, string> = {
 }
 
 // --------------------------------------------------
-// 🔹 series 정렬
+// 🔹 series order 정렬
 // --------------------------------------------------
 const sortedSeries = computed(() =>
   [...props.figure.series].sort(
@@ -79,7 +79,7 @@ const sortedSeries = computed(() =>
 )
 
 // --------------------------------------------------
-// 🔹 chart options
+// 🔹 Chart Options
 // --------------------------------------------------
 const chartOptions = computed(() => {
   const xAxisLabels = props.figure.x.map(v =>
@@ -193,6 +193,7 @@ const chartOptions = computed(() => {
         data: s.y,
       }
 
+      // area series
       if (!isDSCR && !isRevenue) {
         baseSeries.areaStyle = {
           opacity: 0.8,
@@ -215,3 +216,45 @@ const chartOptions = computed(() => {
   }
 })
 </script>
+
+<template>
+  <VCard
+    outlined
+    class="projection-wrapper pa-0"
+  >
+    <VCardTitle class="px-6 py-4">
+      Cash Flow Overview
+    </VCardTitle>
+
+    <VDivider />
+
+    <VCardText class="px-6 py-4">
+      <VOverlay
+        :model-value="loading"
+        contained
+        class="align-center justify-center"
+      >
+        <VProgressCircular
+          indeterminate
+          color="primary"
+        />
+      </VOverlay>
+
+      <VChart
+        v-if="figure"
+        :option="chartOptions"
+        autoresize
+        style="block-size: 520px;"
+      />
+    </VCardText>
+  </VCard>
+</template>
+
+<style scoped>
+.projection-wrapper {
+  border: 1px solid rgba(var(--v-border-color), 0.2) !important;
+  border-radius: 10px !important;
+  background-color: rgb(var(--v-theme-surface)) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 10%) !important;
+}
+</style>
