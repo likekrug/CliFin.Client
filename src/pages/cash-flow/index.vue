@@ -39,6 +39,13 @@ watch(
 )
 
 // ----------------------
+// 🔹 Evaluate 결과 (핵심)
+// ----------------------
+const evaluateResult = ref<any | null>(null)
+const evaluating = ref(false)
+const evaluateError = ref<string | null>(null)
+
+// ----------------------
 // 🔹 API 호출 (evaluate)
 // ----------------------
 const evaluateProject = async (project: Project) => {
@@ -53,17 +60,21 @@ const evaluateProject = async (project: Project) => {
     model: project.model,
   }
 
+  evaluating.value = true
+  evaluateError.value = null
+
   try {
     const res = await apiProject.evaluate(payload)
 
-    console.log('[evaluate result]', res.data)
-
-    // TODO:
-    // - 결과를 store에 저장
-    // - CashFlowReportCard / EChart에 전달
+    evaluateResult.value = res.data
   }
   catch (err) {
     console.error('[evaluate error]', err)
+    evaluateResult.value = null
+    evaluateError.value = 'Failed to evaluate project'
+  }
+  finally {
+    evaluating.value = false
   }
 }
 
@@ -75,6 +86,7 @@ watch(
   project => {
     if (!project)
       return
+
     evaluateProject(project)
   },
   { immediate: true },
@@ -103,17 +115,33 @@ watch(
         <!-- 상단: 보고서 -->
         <VCol cols="12">
           <CashFlowReportCard
-            v-if="selectedProject"
+            v-if="selectedProject && evaluateResult"
             :project="selectedProject"
+            :table="evaluateResult.table"
+            :loading="evaluating"
           />
         </VCol>
 
         <!-- 하단: 차트 -->
         <VCol cols="12">
           <EChart
-            v-if="selectedProject"
-            :project="selectedProject"
+            v-if="selectedProject && evaluateResult"
+            :figure="evaluateResult.figure"
+            :loading="evaluating"
           />
+        </VCol>
+
+        <!-- 에러 표시 (선택) -->
+        <VCol
+          v-if="evaluateError"
+          cols="12"
+        >
+          <VAlert
+            type="error"
+            variant="tonal"
+          >
+            {{ evaluateError }}
+          </VAlert>
         </VCol>
       </VRow>
     </VCol>
