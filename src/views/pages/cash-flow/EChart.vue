@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { LineChart } from 'echarts/charts'
+
 import {
   GridComponent,
   LegendComponent,
@@ -10,10 +11,12 @@ import {
 } from 'echarts/components'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
+import type { EChartsOption, SeriesOption } from 'echarts'
 import VChart from 'vue-echarts'
+import { useTheme } from 'vuetify'
 
 // --------------------------------------------------
-// 🔹 Types (API figure 그대로)
+// 🔹 Types
 // --------------------------------------------------
 interface FigureSeries {
   order: string
@@ -43,6 +46,12 @@ const props = defineProps<{
 }>()
 
 // --------------------------------------------------
+// 🔹 Vuetify theme
+// --------------------------------------------------
+const theme = useTheme()
+const isDark = computed(() => theme.global.current.value.dark)
+
+// --------------------------------------------------
 // 🔹 ECharts modules
 // --------------------------------------------------
 use([
@@ -56,7 +65,22 @@ use([
 ])
 
 // --------------------------------------------------
-// 🔹 색상 매핑 (id 기준)
+// 🔹 Internal state
+// --------------------------------------------------
+const isChartReady = ref(false)
+
+watch(
+  () => props.figure,
+  async () => {
+    isChartReady.value = false
+    await nextTick()
+    isChartReady.value = true
+  },
+  { immediate: true, deep: true },
+)
+
+// --------------------------------------------------
+// 🔹 Color map
 // --------------------------------------------------
 const SERIES_COLOR: Record<string, string> = {
   REV: '#000000',
@@ -70,12 +94,44 @@ const SERIES_COLOR: Record<string, string> = {
 }
 
 // --------------------------------------------------
-// 🔹 series order 정렬
+// 🔹 Sorted series
 // --------------------------------------------------
 const sortedSeries = computed(() =>
   [...props.figure.series].sort(
     (a, b) => Number(a.order) - Number(b.order),
   ),
+)
+
+const chartSeries = computed<SeriesOption[]>(() =>
+  sortedSeries.value.map(s => {
+    const color = SERIES_COLOR[s.id] ?? '#999'
+    const isDSCR = s.id === 'DSCR'
+    const isRevenue = s.id === 'REV'
+
+    const base: SeriesOption = {
+      type: 'line',
+      name: s.name,
+      smooth: true,
+      symbol: 'none',
+      yAxisIndex: s.axis === 'right' ? 1 : 0,
+      stack: !isDSCR && !isRevenue ? 'Total' : undefined,
+      lineStyle: {
+        width: isDSCR || isRevenue ? 2.5 : 1.5,
+        color,
+      },
+      itemStyle: { color },
+      data: s.y,
+    }
+
+    if (!isDSCR && !isRevenue) {
+      ;(base as any).areaStyle = {
+        opacity: 0.8,
+        color: `${color}55`,
+      }
+    }
+
+    return base
+  }),
 )
 
 // --------------------------------------------------
@@ -86,17 +142,28 @@ const chartOptions = computed(() => {
     typeof v === 'number' ? `Year ${v}` : v,
   )
 
+  const legendTextColor = isDark.value ? '#D1D5DB' : '#6B7280'
+  const legendInactiveColor = isDark.value ? '#4B5563' : '#D1D5DB'
+
   return {
+    animation: true,
+    animationDuration: 300,
+    animationEasing: 'cubicOut',
+
     tooltip: {
       trigger: 'axis',
-      backgroundColor: 'rgba(255,255,255,0.95)',
-      borderColor: '#ddd',
-      borderWidth: 1,
-      textStyle: { color: '#333' },
-      axisPointer: {
-        type: 'cross',
-        label: { backgroundColor: '#6a7985' },
+      axisPointer: { type: 'cross' },
+      backgroundColor: isDark.value
+        ? 'rgba(30,30,30,95%)'
+        : 'rgba(255,255,255,95%)',
+      borderColor: isDark.value ? '#374151' : '#E5E7EB',
+      textStyle: {
+        color: isDark.value ? '#E5E7EB' : '#111827',
+        fontFamily:
+          '"Public Sans", Inter, "Helvetica Neue", Arial, sans-serif',
+        fontSize: 12.5,
       },
+
     },
 
     legend: {
@@ -104,12 +171,22 @@ const chartOptions = computed(() => {
       icon: 'circle',
       itemWidth: 10,
       itemHeight: 10,
-      itemGap: 20,
-      data: sortedSeries.value.map(s => s.name),
+      itemGap: 22,
+
+      data: chartSeries.value
+        .map(s => s.name)
+        .filter((name): name is string => Boolean(name)),
+
       textStyle: {
+        fontFamily:
+      '"Public Sans", Inter, "Helvetica Neue", Arial, sans-serif',
         fontSize: 12,
-        color: '#444',
+        fontWeight: 400,
+        lineHeight: 28,
+        color: legendTextColor,
       },
+
+      inactiveColor: legendInactiveColor,
     },
 
     grid: {
@@ -123,125 +200,44 @@ const chartOptions = computed(() => {
       type: 'category',
       boundaryGap: false,
       data: xAxisLabels,
+      axisLabel: {
+        color: isDark.value ? '#9CA3AF' : '#6B7280',
+      },
     },
 
     yAxis: [
-      {
-        type: 'value',
-        name: props.figure.axes.left,
-        nameLocation: 'middle',
-        nameGap: 75,
-        nameRotate: 90,
-        nameTextStyle: {
-          fontSize: 11,
-          color: '#2E2E2E',
-          fontWeight: 650,
-        },
-        axisLabel: {
-          formatter: (v: number) =>
-            `$${(v / 1_000_000).toFixed(1)}M`,
-        },
-        splitLine: {
-          show: true,
-          lineStyle: {
-            color: '#e0e0e0',
-            type: 'dashed',
-          },
-        },
-      },
-      {
-        type: 'value',
-        name: props.figure.axes.right,
-        position: 'right',
-        nameLocation: 'middle',
-        nameGap: 45,
-        nameRotate: 90,
-        nameTextStyle: {
-          fontSize: 10,
-          color: SERIES_COLOR.DSCR,
-          fontWeight: 600,
-        },
-        axisLabel: {
-          color: SERIES_COLOR.DSCR,
-          formatter: (v: number) => v.toFixed(1),
-        },
-        splitLine: { show: false },
-      },
+      { /* left axis */ },
+      { /* right axis */ },
     ],
 
-    series: sortedSeries.value.map(s => {
-      const color = SERIES_COLOR[s.id] ?? '#999'
-      const isDSCR = s.id === 'DSCR'
-      const isRevenue = s.id === 'REV'
-
-      const baseSeries: any = {
-        name: s.name,
-        type: 'line',
-        smooth: true,
-        symbol: 'none',
-        yAxisIndex: s.axis === 'right' ? 1 : 0,
-        stack: !isDSCR && !isRevenue ? 'Total' : undefined,
-        lineStyle: {
-          width: isDSCR || isRevenue ? 2.5 : 1.5,
-          color,
-        },
-        itemStyle: { color },
-        emphasis: {
-          focus: 'series',
-          blurScope: 'coordinateSystem',
-        },
-        data: s.y,
-      }
-
-      // area series
-      if (!isDSCR && !isRevenue) {
-        baseSeries.areaStyle = {
-          opacity: 0.8,
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0, color },
-              { offset: 1, color: `${color}33` },
-            ],
-          },
-        }
-      }
-
-      return baseSeries
-    }),
-  }
+    series: chartSeries.value,
+  } satisfies EChartsOption
 })
 </script>
 
 <template>
-  <VCard
-    outlined
-    class="projection-wrapper pa-0"
-  >
+  <VCard class="projection-wrapper pa-0">
     <VCardTitle class="px-6 py-4">
       Cash Flow Overview
     </VCardTitle>
 
     <VDivider />
 
-    <VCardText class="px-6 py-4">
+    <VCardText class="px-6 py-4 position-relative">
       <VOverlay
-        :model-value="loading"
+        :model-value="loading || !isChartReady"
         contained
         class="align-center justify-center"
       >
         <VProgressCircular
           indeterminate
           color="primary"
+          size="42"
         />
       </VOverlay>
 
       <VChart
-        v-if="figure"
+        v-if="isChartReady"
         :option="chartOptions"
         autoresize
         style="block-size: 520px;"
@@ -252,9 +248,29 @@ const chartOptions = computed(() => {
 
 <style scoped>
 .projection-wrapper {
-  border: 1px solid rgba(var(--v-border-color), 0.2) !important;
-  border-radius: 10px !important;
-  background-color: rgb(var(--v-theme-surface)) !important;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 10%) !important;
+  border: 1px solid rgba(var(--v-border-color), 0.2);
+  border-radius: 10px;
+  background-color: rgb(var(--v-theme-surface));
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 10%);
+}
+
+/* Legend style */
+:deep(.echarts-legend-text) {
+  font-family: "Public Sans", Inter, "Helvetica Neue", Arial, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+:deep(.echarts-legend-item) {
+  margin-right: 18px;
+}
+
+:deep(.echarts-legend-item.inactive .echarts-legend-text) {
+  fill: rgba(156, 163, 175, 60%);
+}
+
+:deep(.v-theme--dark .echarts-legend-text) {
+  fill: #d1d5db;
 }
 </style>
