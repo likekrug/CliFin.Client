@@ -2,15 +2,19 @@
 import { computed, nextTick, watch } from 'vue'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useDisplay } from 'vuetify'
+import type { CategoryCode } from '@/types/category.types'
 
 interface Props {
   modelValue: boolean
-  category: 'C1' | 'C2' | 'C3'
+  category: CategoryCode
   assetType: string
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits(['update:modelValue'])
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void
+}>()
 
 const { mdAndUp } = useDisplay()
 
@@ -59,7 +63,7 @@ watch(
 // ✅ Drawer 섹션 제목
 const sectionTitle = computed(() => {
   switch (props.category) {
-    case 'C1': return 'Asset Characteristics'
+    case 'C1': return 'Asset Specifications'
     case 'C2': return 'Market Conditions'
     case 'C3': return 'Financing Terms & Tax'
     default: return 'Information'

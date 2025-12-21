@@ -4,14 +4,15 @@ import { nanoid } from 'nanoid'
 
 import InformationDrawer from './InformationDrawer.vue'
 import MapSearchDialog from './MapSearchDialog.vue'
+import type { AssetItem, ProjectDefaultData } from '@/types/projectDefault.types'
 
 import { useAssetStore } from '@/stores/asset.store'
 import { useProjectDefaultStore } from '@/stores/projectDefault.store'
 import { useProjectStore } from '@/stores/project.store'
 
-import type { ProjectDefaultData } from '@/types/projectDefault.types'
 import type { Project } from '@/types/project.types'
 import { getCategories, getGroups } from '@/utils/projectDefault.helper'
+import type { CategoryCode } from '@/types/category.types'
 
 // ------------------------
 // STORE
@@ -57,9 +58,10 @@ const expandedMap = reactive<Record<string, boolean>>({})
 // Drawer
 // ------------------------
 const isInfoDrawer = ref(false)
-const drawerCategory = ref<'C1' | 'C3' | 'C4'>('C1')
 
-const openDrawer = (category: 'C1' | 'C3' | 'C4') => {
+const drawerCategory = ref<CategoryCode>('C1')
+
+const openDrawer = (category: CategoryCode) => {
   drawerCategory.value = category
   isInfoDrawer.value = true
 }
@@ -168,6 +170,17 @@ const onCreateProject = () => {
   projectNameError.value = ''
   location.value = null
   address.value = ''
+}
+
+const resetToDefault = (item: AssetItem) => {
+  if (item.dataType === 'boolean') {
+    model.value[item.itemCode] = Boolean(item.default)
+  }
+  else {
+    const num = Number(item.default)
+
+    model.value[item.itemCode] = Number.isNaN(num) ? null : num
+  }
 }
 </script>
 
@@ -400,7 +413,7 @@ const onCreateProject = () => {
                           class="cursor-pointer"
                           size="18"
                           color="grey"
-                          @click.stop="model[item.itemCode] = item.default"
+                          @click.stop="resetToDefault(item)"
                         />
                       </template>
                     </VTextField>

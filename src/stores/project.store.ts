@@ -15,18 +15,18 @@ export const useProjectStore = defineStore('project', () => {
   const loaded = ref(false)
 
   // ------------------------
-  // ACTIONS
+  // INTERNAL HELPERS
   // ------------------------
 
-  /** LocalStorage → Store  */
+  /** LocalStorage → Store (항상 localStorage 우선) */
   const loadProjects = (): void => {
-    if (loaded.value)
-      return
-
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored)
+        projects.value = JSON.parse(stored)
 
-      projects.value = stored ? JSON.parse(stored) : []
+      else
+        projects.value = []
     }
     catch (err) {
       console.error('[projectStore] Failed to load projects', err)
@@ -47,13 +47,25 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
-  /** 초기 진입 시 보장 로딩 */
+  /** 모든 mutation 전에 load 보장 */
+  const ensureLoaded = (): void => {
+    if (!loaded.value)
+      loadProjects()
+  }
+
+  // ------------------------
+  // ACTIONS
+  // ------------------------
+
+  /** 외부에서 명시적으로 초기 로드하고 싶을 때 */
   const init = (): void => {
-    loadProjects()
+    ensureLoaded()
   }
 
   /** 프로젝트 추가 */
   const addProject = (project: Project): void => {
+    ensureLoaded()
+
     if (projects.value.some(p => p.id === project.id)) {
       console.warn('[projectStore] Duplicate project id:', project.id)
 
@@ -70,6 +82,8 @@ export const useProjectStore = defineStore('project', () => {
 
   /** 프로젝트 수정 */
   const updateProject = (updated: Project): void => {
+    ensureLoaded()
+
     const index = projects.value.findIndex(p => p.id === updated.id)
     if (index === -1)
       return
@@ -77,7 +91,6 @@ export const useProjectStore = defineStore('project', () => {
     projects.value[index] = {
       ...projects.value[index],
       ...updated,
-
       model: { ...updated.model },
     }
 
@@ -86,16 +99,20 @@ export const useProjectStore = defineStore('project', () => {
 
   /** 프로젝트 삭제 */
   const removeProject = (id: string): void => {
+    ensureLoaded()
+
     projects.value = projects.value.filter(p => p.id !== id)
     saveProjects()
   }
 
-  /** 단건 조회 (편집 / 상세 화면) */
+  /** 단건 조회 (편집 / 상세) */
   const getProjectById = (id: string): Project | null => {
+    ensureLoaded()
+
     return projects.value.find(p => p.id === id) ?? null
   }
 
-  /** 전체 초기화 (로그아웃 등) */
+  /** 전체 초기화 (로그아웃 등에서만 호출) */
   const reset = (): void => {
     projects.value = []
     loaded.value = false
@@ -129,7 +146,6 @@ export const useProjectStore = defineStore('project', () => {
 
     // actions
     init,
-    loadProjects,
     addProject,
     updateProject,
     removeProject,

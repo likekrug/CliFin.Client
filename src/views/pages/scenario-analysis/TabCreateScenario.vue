@@ -1,21 +1,40 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useDisplay } from 'vuetify'
+import { storeToRefs } from 'pinia'
+
+import { useScenarioStore } from '@/stores/scenario.store'
 
 const emit = defineEmits(['changeTab'])
 
 /* -------------------------------
- 🔹 Scenario Section
+ 🔹 Scenario (API 기반)
 -------------------------------- */
+const scenarioStore = useScenarioStore()
+const { sortedList } = storeToRefs(scenarioStore)
+
 const baselineChecked = ref(true)
-
-const otherScenarios = [
-  { label: 'SSP126', value: 'SSP126' },
-  { label: 'SSP370', value: 'SSP370' },
-  { label: 'SSP585', value: 'SSP585' },
-]
-
 const selectedScenarios = ref<string[]>([])
+
+const scenarios = sortedList
+
+onMounted(async () => {
+  await scenarioStore.load()
+})
+
+/**
+ * Baseline 시나리오
+ */
+const baselineScenario = computed(() =>
+  scenarios.value.find(s => s.id === 'BASELINE'),
+)
+
+/**
+ * Baseline 제외 나머지 시나리오
+ */
+const otherScenarios = computed(() =>
+  scenarios.value.filter(s => s.id !== 'BASELINE'),
+)
 
 /* -------------------------------
  🔹 Asset Risk Factor Mapping
@@ -39,7 +58,7 @@ type AssetType = keyof typeof RISK_FACTOR_MAP
 type RiskFactorCode = (typeof RISK_FACTORS)[number]['code']
 
 /* -------------------------------
- 🔹 Projects
+ 🔹 Projects (샘플)
 -------------------------------- */
 const projects = ref([
   { id: 1, name: 'Coal Power Plant Alpha', type: 'coal', location: '53.339688, -6.236688' },
@@ -135,17 +154,19 @@ const onViewResults = () => {
 
     <div class="d-flex align-center flex-wrap gap-3 scenario-checkboxes">
       <VCheckbox
+        v-if="baselineScenario"
         v-model="baselineChecked"
-        label="Baseline"
-        hide-details
+        :label="baselineScenario.name"
         density="compact"
       />
+
+      <!-- Other Scenarios (API 기반) -->
       <VCheckbox
         v-for="scenario in otherScenarios"
-        :key="scenario.value"
+        :key="scenario.id"
         v-model="selectedScenarios"
-        :label="scenario.label"
-        :value="scenario.value"
+        :label="scenario.name"
+        :value="scenario.id"
         hide-details
         density="compact"
       />

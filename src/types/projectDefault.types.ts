@@ -1,6 +1,7 @@
 // =============================================
 // /src/types/projectDefault.types.ts
 // =============================================
+import type { CategoryCode } from './category.types'
 
 // 개별 아이템
 export interface AssetItem {
@@ -22,7 +23,7 @@ export interface AssetGroup {
 
 // 카테고리
 export interface AssetCategory {
-  categoryCode: string
+  categoryCode: CategoryCode // 🔥 핵심 수정
   categoryName: string
   groups: AssetGroup[]
 }
