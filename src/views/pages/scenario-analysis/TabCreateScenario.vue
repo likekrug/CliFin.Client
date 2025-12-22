@@ -4,92 +4,84 @@ import { useDisplay } from 'vuetify'
 import { storeToRefs } from 'pinia'
 
 import { useScenarioStore } from '@/stores/scenario.store'
+import { useRiskFactorStore } from '@/stores/riskFactor.store'
+import { useProjectStore } from '@/stores/project.store'
 
-const emit = defineEmits(['changeTab'])
+import type { RiskFactor } from '@/types/scenarioRiskFactor.types'
+import type { Project } from '@/types/project.types'
+
+const emit = defineEmits<{
+  (e: 'changeTab', tab: string): void
+}>()
 
 /* -------------------------------
- 🔹 Scenario (API 기반)
+ 🔹 Store
 -------------------------------- */
 const scenarioStore = useScenarioStore()
+const riskFactorStore = useRiskFactorStore()
+const projectStore = useProjectStore()
+
 const { sortedList } = storeToRefs(scenarioStore)
 
+/* -------------------------------
+ 🔹 Scenario
+-------------------------------- */
 const baselineChecked = ref(true)
 const selectedScenarios = ref<string[]>([])
 
 const scenarios = sortedList
 
+/* -------------------------------
+ 🔹 Projects
+-------------------------------- */
+const projects = computed<Project[]>(() => projectStore.sortedProjects)
+
+/* -------------------------------
+ 🔹 Selection State (🔥 FIXED)
+-------------------------------- */
+const selectedProjects = ref<string[]>([])
+const selectedRiskFactors = ref<Record<string, string[]>>({})
+const showSummary = ref(true)
+
+/* -------------------------------
+ 🔹 Lifecycle
+-------------------------------- */
 onMounted(async () => {
+  projectStore.init()
   await scenarioStore.load()
+  await riskFactorStore.load()
 })
 
-/**
- * Baseline 시나리오
- */
+/* -------------------------------
+ 🔹 Computed
+-------------------------------- */
 const baselineScenario = computed(() =>
   scenarios.value.find(s => s.id === 'BASELINE'),
 )
 
-/**
- * Baseline 제외 나머지 시나리오
- */
 const otherScenarios = computed(() =>
   scenarios.value.filter(s => s.id !== 'BASELINE'),
 )
 
-/* -------------------------------
- 🔹 Asset Risk Factor Mapping
--------------------------------- */
-const RISK_FACTOR_MAP = {
-  coal: ['EW', 'AT', 'RD', 'WT'],
-  natural_gas: ['EW', 'AT'],
-  solar: ['EW', 'AT', 'RD', 'DA'],
-  wind: ['EW', 'AT'],
-} as const
-
-const RISK_FACTORS = [
-  { code: 'EW', name: 'Extreme Weather' },
-  { code: 'AT', name: 'Air Temperature' },
-  { code: 'RD', name: 'River Discharge' },
-  { code: 'DA', name: 'Dust Accumulation' },
-  { code: 'WT', name: 'Water Temperature' },
-] as const
-
-type AssetType = keyof typeof RISK_FACTOR_MAP
-type RiskFactorCode = (typeof RISK_FACTORS)[number]['code']
-
-/* -------------------------------
- 🔹 Projects (샘플)
--------------------------------- */
-const projects = ref([
-  { id: 1, name: 'Coal Power Plant Alpha', type: 'coal', location: '53.339688, -6.236688' },
-  { id: 2, name: 'Gas Combined Cycle', type: 'natural_gas', location: '37.7749, -122.4194' },
-  { id: 3, name: 'Solar Field Delta', type: 'solar', location: '35.6895, 139.6917' },
-  { id: 4, name: 'Wind Farm Omega', type: 'wind', location: '51.5074, -0.1278' },
-])
-
-/* -------------------------------
- 🔹 Selection State
--------------------------------- */
-const selectedProjects = ref<number[]>([])
-const selectedRiskFactors = ref<Record<number, RiskFactorCode[]>>({})
-const showSummary = ref(true)
+const { mdAndUp } = useDisplay()
 
 /* -------------------------------
  🔹 Methods
 -------------------------------- */
-const isProjectSelected = (id: number) => selectedProjects.value.includes(id)
+const isProjectSelected = (id: string) =>
+  selectedProjects.value.includes(id)
 
-const getRiskFactors = (type: AssetType) =>
-  RISK_FACTORS.filter(f => RISK_FACTOR_MAP[type]?.includes(f.code))
+const getRiskFactors = (assetType: string): RiskFactor[] =>
+  riskFactorStore.getRiskFactorsByAsset(assetType)
 
-const toggleProjectSelection = (id: number) => {
-  if (isProjectSelected(id)) {
-    selectedProjects.value = selectedProjects.value.filter(pid => pid !== id)
-    delete selectedRiskFactors.value[id]
+const toggleProjectSelection = (projectId: string) => {
+  if (isProjectSelected(projectId)) {
+    selectedProjects.value = selectedProjects.value.filter(id => id !== projectId)
+    delete selectedRiskFactors.value[projectId]
   }
   else {
-    selectedProjects.value.push(id)
-    selectedRiskFactors.value[id] = []
+    selectedProjects.value.push(projectId)
+    selectedRiskFactors.value[projectId] = []
   }
 }
 
@@ -101,7 +93,7 @@ const toggleSelectAllProjects = () => {
   else {
     selectedProjects.value = projects.value.map(p => p.id)
     projects.value.forEach(p => {
-      selectedRiskFactors.value[p.id] = selectedRiskFactors.value[p.id] || []
+      selectedRiskFactors.value[p.id] ||= []
     })
   }
 }
@@ -110,34 +102,39 @@ const toggleSelectAllRiskFactors = () => {
   const allSelected = projects.value.every(
     p =>
       !isProjectSelected(p.id)
-      || selectedRiskFactors.value[p.id]?.length === getRiskFactors(p.type as AssetType).length,
+      || selectedRiskFactors.value[p.id]?.length
+        === getRiskFactors(p.assetType).length,
   )
 
   projects.value.forEach(p => {
-    if (isProjectSelected(p.id)) {
-      selectedRiskFactors.value[p.id] = allSelected
-        ? []
-        : getRiskFactors(p.type as AssetType).map(r => r.code)
-    }
+    if (!isProjectSelected(p.id))
+      return
+
+    selectedRiskFactors.value[p.id] = allSelected
+      ? []
+      : getRiskFactors(p.assetType).map(r => r.code)
   })
 }
 
+/* -------------------------------
+ 🔹 Summary
+-------------------------------- */
 const selectedSummary = computed(() =>
   projects.value
     .filter(p => selectedProjects.value.includes(p.id))
     .map(p => ({
-      ...p,
+      id: p.id,
+      name: p.name,
+      type: p.assetType,
       risks:
-        selectedRiskFactors.value[p.id]?.map(
-          code => RISK_FACTORS.find(f => f.code === code)?.name || code,
+        selectedRiskFactors.value[p.id]?.map(code =>
+          riskFactorStore.riskFactors.find(r => r.code === code)?.name || code,
         ) || [],
     })),
 )
 
-const { mdAndUp } = useDisplay()
-
 /* -------------------------------
- 🔹 View Results Event
+ 🔹 View Results
 -------------------------------- */
 const onViewResults = () => {
   emit('changeTab', 'Result')
@@ -160,7 +157,6 @@ const onViewResults = () => {
         density="compact"
       />
 
-      <!-- Other Scenarios (API 기반) -->
       <VCheckbox
         v-for="scenario in otherScenarios"
         :key="scenario.id"
@@ -178,7 +174,7 @@ const onViewResults = () => {
     style="border-style: dashed;"
   />
 
-  <!-- Your Projects -->
+  <!-- Project List -->
   <div class="mb-3">
     <div class="d-flex align-center text-body-1 mb-2">
       <div class="vertical-bar me-2" />
@@ -187,13 +183,12 @@ const onViewResults = () => {
 
     <div
       class="d-flex flex-wrap gap-2"
-      :class="mdAndUp ? 'justify-end' : 'flex-column align-center w-100'"
+      :class="mdAndUp ? 'justify-end' : 'flex-column w-100'"
     >
       <VBtn
         size="small"
         variant="outlined"
         color="primary"
-        class="w-100 w-md-auto"
         @click="toggleSelectAllProjects"
       >
         {{ selectedProjects.length === projects.length ? 'Deselect All Projects' : 'Select All Projects' }}
@@ -203,7 +198,6 @@ const onViewResults = () => {
         size="small"
         variant="outlined"
         color="secondary"
-        class="w-100 w-md-auto"
         @click="toggleSelectAllRiskFactors"
       >
         Toggle All Risk Factors
@@ -213,7 +207,6 @@ const onViewResults = () => {
         size="small"
         variant="tonal"
         color="info"
-        class="w-100 w-md-auto"
         @click="showSummary = !showSummary"
       >
         {{ showSummary ? 'Hide Summary' : 'Show Summary' }}
@@ -231,29 +224,6 @@ const onViewResults = () => {
       Selection Summary
     </div>
 
-    <!-- Scenario Chips -->
-    <div class="d-flex flex-wrap gap-2 mb-3">
-      <VChip
-        v-if="baselineChecked"
-        size="small"
-        color="secondary"
-        variant="tonal"
-      >
-        Baseline
-      </VChip>
-
-      <VChip
-        v-for="sc in selectedScenarios"
-        :key="sc"
-        size="small"
-        color="success"
-        variant="tonal"
-      >
-        {{ sc }}
-      </VChip>
-    </div>
-
-    <!-- Summary Card -->
     <VCard
       elevation="0"
       class="summary-card"
@@ -295,7 +265,7 @@ const onViewResults = () => {
     </VCard>
   </div>
 
-  <!-- PC: Desktop Table + Bottom Inline Button -->
+  <!-- Desktop -->
   <div
     v-if="mdAndUp"
     class="mt-6"
@@ -306,17 +276,11 @@ const onViewResults = () => {
     >
       <thead>
         <tr>
-          <th style="inline-size: 60px;" />
-          <th class="text-left">
-            Project Name
-          </th>
-          <th class="text-center" />
-          <th class="text-left">
-            Asset Type
-          </th>
-          <th class="text-left">
-            Risk Factors
-          </th>
+          <th />
+          <th>Project Name</th>
+          <th />
+          <th>Asset Type</th>
+          <th>Risk Factors</th>
         </tr>
       </thead>
 
@@ -325,7 +289,7 @@ const onViewResults = () => {
           v-for="project in projects"
           :key="project.id"
         >
-          <td class="text-center">
+          <td>
             <VCheckbox
               :model-value="isProjectSelected(project.id)"
               hide-details
@@ -343,13 +307,13 @@ const onViewResults = () => {
           </td>
 
           <td class="text-capitalize">
-            {{ project.type }}
+            {{ project.assetType }}
           </td>
 
           <td>
             <div class="d-flex flex-wrap gap-4">
               <div
-                v-for="risk in getRiskFactors(project.type)"
+                v-for="risk in getRiskFactors(project.assetType)"
                 :key="risk.code"
                 class="d-flex align-center"
               >
@@ -360,10 +324,7 @@ const onViewResults = () => {
                   hide-details
                   density="compact"
                 />
-                <span
-                  class="text-body-2"
-                  :class="{ 'text-disabled': !isProjectSelected(project.id) }"
-                >
+                <span :class="{ 'text-disabled': !isProjectSelected(project.id) }">
                   {{ risk.name }}
                 </span>
               </div>
@@ -372,79 +333,10 @@ const onViewResults = () => {
         </tr>
       </tbody>
     </VTable>
-
-    <!-- ⭐ 마지막에 붙는 PC Result View 버튼 ⭐ -->
     <div class="d-flex justify-end mt-4">
       <VBtn
         color="primary"
         class="text-end py-0"
-      >
-        Result View
-      </VBtn>
-    </div>
-  </div>
-
-  <!-- Mobile Cards -->
-  <div
-    v-else
-    class="pb-14"
-  >
-    <div class="d-flex flex-column gap-4">
-      <VCard
-        v-for="project in projects"
-        :key="project.id"
-        variant="outlined"
-        class="pa-3"
-      >
-        <div class="d-flex justify-space-between align-center mb-2">
-          <div class="text-subtitle-1 font-weight-medium">
-            {{ project.name }}
-          </div>
-
-          <VCheckbox
-            :model-value="isProjectSelected(project.id)"
-            hide-details
-            density="compact"
-            @update:model-value="toggleProjectSelection(project.id)"
-          />
-        </div>
-
-        <div class="text-body-2 text-medium-emphasis mb-2">
-          {{ project.type }} — {{ project.location }}
-        </div>
-
-        <div class="d-flex flex-wrap gap-3">
-          <div
-            v-for="risk in getRiskFactors(project.type as AssetType)"
-            :key="risk.code"
-            class="d-flex align-center"
-          >
-            <VCheckbox
-              v-model="selectedRiskFactors[project.id]"
-              :value="risk.code"
-              :disabled="!isProjectSelected(project.id)"
-              hide-details
-              density="compact"
-            />
-
-            <span
-              class="text-body-2"
-              :class="{ 'text-disabled': !isProjectSelected(project.id) }"
-            >
-              {{ risk.name }}
-            </span>
-          </div>
-        </div>
-      </VCard>
-    </div>
-
-    <!-- Mobile: bottom fixed -->
-    <div class="mobile-fixed-btn">
-      <VBtn
-        block
-        color="primary"
-        variant="flat"
-        size="large"
         @click="onViewResults"
       >
         View Results
